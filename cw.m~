@@ -1,0 +1,47 @@
+% Setting random state to get constant answers
+randn('state',23432);
+rand('state',3454);
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% Global Setting Variables %%%%%%%%%%%%
+totalassets = 5;
+T = 100; % Total number of samples per hist set
+roundcoeficient = 100;
+Beta = 0.95;
+Alpha = 0;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%% Constants %%%%%%%%%%%%%%%%%%%%
+% Generating Portfolio proportion random matrix with rows adding to 1
+pimat = rand(totalassets, 1); 
+rowsum = sum(pi, 1); % Total sum of each row
+pimat = bsxfun(@rdivide, pimat, rowsum); % Each value over the total of respective row
+% Matrix containing historical return for all current assets
+R = floor(roundcoeficient * rand(totalassets, T));
+% Matrix containing historical returns for index assets
+iR = floor(roundcoeficient * rand(totalassets, T));
+% Index Matrix
+I = transpose(iR) * pimat;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%% Calculations %%%%%%%%%%%%%%%%%
+totalSum = 0;
+for i = 1:T
+    iRet = I(i);
+    currR = R(:,i);
+    mRet = transpose(currR) * pimat;
+    currErr = iRet - mRet;
+    normSum = norm(currErr, 2);
+    totalSum = totalSum + normSum;
+end
+g = totalSum / T;
+
+divcoef = 1 / (T*(1-B));
+
+total = Alpha + divcoef;
+
+
