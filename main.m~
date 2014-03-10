@@ -55,8 +55,8 @@ rand('state',3454);
 %%%%%%%%%%%%%%%%%%% From File %%%%%%%%%%%%%%%%%%
 fI = importdata('FPSEOnlyData');
 fR = importdata('FPSESecuritiesData');
-fI = fI(1:100,1);
-fR = fR(1:100,1:50
+% fI = fI(1:100,1);
+% fR = fR(1:100,1:50
 % fR = fR(:,10:20);
 T = size(fI, 1) - 1;
 totalassets = size(fR,2);
@@ -68,13 +68,8 @@ totalassets = size(fR,2);
 
 % Generating Portfolio proportion random matrix with rows adding to 1
 % pimat = rand(totalassets, 1); 
-% pimat = pimat / sum(pimat, 1); % Each value over the total of the sum of columns
-
-% Calculating returns for Index
-I = [];
-for curr = 2:(T+1)
-    I = [I; fI(curr) / fI(curr-1)];
-end
+% pimat = pimat / sum(pimat, 1); % Each value over the total of the sum of
+% columns
 
 % Calculating returns for all individual assets
 R = [];
@@ -89,6 +84,13 @@ for i = 1:totalassets
     R = [R; returns];
 end
 
+% Calculating returns for Index
+I = mean(R)';
+
+% I = [];
+% for curr = 2:(T+1)
+%     I = [I; fI(curr) / fI(curr-1)];
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%% Hard Coded Test Data %%%%%%%%%%%%%%
@@ -195,6 +197,7 @@ curr = step
 all_pimat_n = [];
 all_pimat_c = [];
 all_pimat_a = [];
+all_pimat_l = [];
 
 idx = [];
 
@@ -208,12 +211,14 @@ for i = 1:1
     Beta = .3;
     k = 5;
     divcoef = 1 / (T*(1-Beta));
+    delta = 1;
     
     curr = step
     
     te_n = [];
     te_c = [];
     te_a = [];
+    te_l = [];
     idx = [];
     
     while curr <= totalassets
@@ -222,6 +227,7 @@ for i = 1:1
         total_n = 0;
         total_c = 0;
         total_a = 0;
+        total_l = 0;
 
         currR = R(1:curr,:);
 
@@ -278,18 +284,43 @@ for i = 1:1
                 pimat_a >= 0
                 sum(pimat_a) == 1
                 % QUESTION: Should this norm constraint be in CVAR as well?
-%                 norm(pimat_a) < C
+                norm(pimat_a) <= C
+        cvx_end
+        
+        % CVX to find optimal value for Lasso
+        cvx_begin quiet
+            variable z_l(T)
+            variable pimat_l(curr)
+            % This is the same as: minimize( sum(power(I - transpose(currR)*pimat_l, 2) + delta * sum(pimat_l)) )
+            minimize( sum(z_l) )
+            subject to
+                z_l >= 0
+        %         transpose(z_c)*z_c <= power(C,2)
+                z_l - power(I - transpose(currR)*pimat_l, 2) - delta * sum(pimat_l) >= 0
+                pimat_l >= 0
+                sum(pimat_l) == 1
+                
+                % QUESTION: Should this norm constraint be in CVAR as well?
+                % Note: This performs better without this constraint
+                norm(pimat_l) <= C
         cvx_end
 
         % Calculating Tracking Error
         Ret_n = abs(I - transpose(currR) * pimat_n);
         Ret_c = abs(I - transpose(currR) * pimat_c);
         Ret_a = abs(I - transpose(currR) * pimat_a);
+        Ret_l = abs(I - transpose(currR) * pimat_l);
 
         % Tracking Errors
-        te_n = [te_n; sum(Ret_n)];
-        te_c = [te_c; sum(Ret_c)];
-        te_a = [te_a; sum(Ret_a)];
+%         te_n = [te_n; sum(Ret_n)];
+%         te_c = [te_c; sum(Ret_c)];
+%         te_a = [te_a; sum(Ret_a)];
+%         te_l = [te_l; sum(Ret_l)];
+
+        all_pimat_n = [all_pimat_n, pimat_n];
+        all_pimat_c = [all_pimat_n, pimat_n];
+        all_pimat_n = [all_pimat_n, pimat_n];
+        all_pimat_n = [all_pimat_n, pimat_n];
 
         idx = [idx ; curr];
 
@@ -301,15 +332,47 @@ for i = 1:1
 
     end
     
-    all_pimat_n = [all_pimat_n, te_n];
-    all_pimat_c = [all_pimat_c, te_c];
-    all_pimat_a = [all_pimat_a, te_a]; 
+%     all_pimat_n = [all_pimat_n, te_n];
+%     all_pimat_c = [all_pimat_c, te_c];
+%     all_pimat_a = [all_pimat_a, te_a]; 
+%     all_pimat_l = [all_pimat_l, te_l]; 
     
     figure(i);
-    plot(idx,all_pimat_n(:,i),'black', idx,all_pimat_c(:,i),'red', idx,all_pimat_a(:,i),'blue');
+%     plot(idx,all_pimat_n(:,i),'black', idx,all_pimat_c(:,i),'red', idx,all_pimat_a(:,i),'blue', idx,all_pimat_l(:,i),'green');
+    plot(idx,all_pimat_n(:,i),'black', idx,all_pimat_a(:,i),'blue', idx,all_pimat_l(:,i),'green');
 end
 
+% legend('NCCVAR', 'CVAR', 'ABS', 'LASSO');
+legend('NCCVAR', 'ABS', 'LASSO');
 
+count_n = 0;
+count_l = 0;
+count_a = 0;
+count_c = 0;
+
+
+for i = 1:totalassets
+    if(pimat_n(i) < 0.0001)
+        count_n = count_n+1;
+    end
+    
+    if(pimat_l(i) < 0.0001)
+        count_l = count_l+1;
+    end
+    
+    if(pimat_a(i) < 0.0001)
+        count_a = count_a+1;
+    end
+    
+    if(pimat_c(i) < 0.0001)
+        count_c = count_c+1;
+    end
+end
+
+count_n
+count_l
+count_a
+% count_c
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
