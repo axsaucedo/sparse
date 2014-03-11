@@ -84,13 +84,13 @@ for i = 1:totalassets
     R = [R; returns];
 end
 
+I = [];
+for curr = 2:(T+1)
+    I = [I; fI(curr) / fI(curr-1)];
+end
+
 % Calculating returns for Index
 I = mean(R)';
-
-% I = [];
-% for curr = 2:(T+1)
-%     I = [I; fI(curr) / fI(curr-1)];
-% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%% Hard Coded Test Data %%%%%%%%%%%%%%
@@ -191,13 +191,23 @@ divcoef = 1 / (T*(1-Beta));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Tracking error of Portfolio Subset %%%%%%%
 %Initialize
-step = 12
-curr = step
+step = 12;
+curr = step;
+limit = totalassets;
+
+curr = 36;
+limit = 72;
 
 all_pimat_n = [];
 all_pimat_c = [];
 all_pimat_a = [];
 all_pimat_l = [];
+
+pimats_n = [];
+pimats_c = [];
+pimats_a = [];
+pimats_l = [];
+
 
 idx = [];
 
@@ -211,9 +221,9 @@ for i = 1:1
     Beta = .3;
     k = 5;
     divcoef = 1 / (T*(1-Beta));
-    delta = 1;
+    delta = 0.002;
     
-    curr = step
+%     curr = step;
     
     te_n = [];
     te_c = [];
@@ -221,7 +231,7 @@ for i = 1:1
     te_l = [];
     idx = [];
     
-    while curr <= totalassets
+    while curr <= limit
         disp(curr);
 
         total_n = 0;
@@ -297,12 +307,13 @@ for i = 1:1
                 z_l >= 0
         %         transpose(z_c)*z_c <= power(C,2)
                 z_l - power(I - transpose(currR)*pimat_l, 2) - delta * sum(pimat_l) >= 0
+                
+                sum(pimat_l) <= 1
                 pimat_l >= 0
-                sum(pimat_l) == 1
                 
                 % QUESTION: Should this norm constraint be in CVAR as well?
                 % Note: This performs better without this constraint
-                norm(pimat_l) <= C
+%                 norm(pimat_l) <= C
         cvx_end
 
         % Calculating Tracking Error
@@ -312,15 +323,15 @@ for i = 1:1
         Ret_l = abs(I - transpose(currR) * pimat_l);
 
         % Tracking Errors
-%         te_n = [te_n; sum(Ret_n)];
-%         te_c = [te_c; sum(Ret_c)];
-%         te_a = [te_a; sum(Ret_a)];
-%         te_l = [te_l; sum(Ret_l)];
+        te_n = [te_n; sum(Ret_n)];
+        te_c = [te_c; sum(Ret_c)];
+        te_a = [te_a; sum(Ret_a)];
+        te_l = [te_l; sum(Ret_l)];
 
-        all_pimat_n = [all_pimat_n, pimat_n];
-        all_pimat_c = [all_pimat_n, pimat_n];
-        all_pimat_n = [all_pimat_n, pimat_n];
-        all_pimat_n = [all_pimat_n, pimat_n];
+        pimats_n = [pimats_n, [pimat_n ; zeros(totalassets-curr,1)] ];
+        pimats_c = [pimats_c, [pimat_c ; zeros(totalassets-curr,1)] ];
+        pimats_a = [pimats_a, [pimat_a ; zeros(totalassets-curr,1)] ];
+        pimats_l = [pimats_l, [pimat_l ; zeros(totalassets-curr,1)] ];
 
         idx = [idx ; curr];
 
@@ -332,10 +343,10 @@ for i = 1:1
 
     end
     
-%     all_pimat_n = [all_pimat_n, te_n];
-%     all_pimat_c = [all_pimat_c, te_c];
-%     all_pimat_a = [all_pimat_a, te_a]; 
-%     all_pimat_l = [all_pimat_l, te_l]; 
+    all_pimat_n = [all_pimat_n, te_n];
+    all_pimat_c = [all_pimat_c, te_c];
+    all_pimat_a = [all_pimat_a, te_a]; 
+    all_pimat_l = [all_pimat_l, te_l]; 
     
     figure(i);
 %     plot(idx,all_pimat_n(:,i),'black', idx,all_pimat_c(:,i),'red', idx,all_pimat_a(:,i),'blue', idx,all_pimat_l(:,i),'green');
@@ -351,7 +362,7 @@ count_a = 0;
 count_c = 0;
 
 
-for i = 1:totalassets
+for i = 1:limit
     if(pimat_n(i) < 0.0001)
         count_n = count_n+1;
     end

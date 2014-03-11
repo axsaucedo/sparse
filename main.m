@@ -84,13 +84,13 @@ for i = 1:totalassets
     R = [R; returns];
 end
 
+I = [];
+for curr = 2:(T+1)
+    I = [I; fI(curr) / fI(curr-1)];
+end
+
 % Calculating returns for Index
 I = mean(R)';
-
-% I = [];
-% for curr = 2:(T+1)
-%     I = [I; fI(curr) / fI(curr-1)];
-% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%% Hard Coded Test Data %%%%%%%%%%%%%%
@@ -191,8 +191,12 @@ divcoef = 1 / (T*(1-Beta));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Tracking error of Portfolio Subset %%%%%%%
 %Initialize
-step = 12
-curr = step
+step = 12;
+curr = step;
+limit = totalassets;
+
+curr = 36;
+limit = 72;
 
 all_pimat_n = [];
 all_pimat_c = [];
@@ -217,9 +221,9 @@ for i = 1:1
     Beta = .3;
     k = 5;
     divcoef = 1 / (T*(1-Beta));
-    delta = 10;
+    delta = 0.002;
     
-    curr = step
+%     curr = step;
     
     te_n = [];
     te_c = [];
@@ -227,7 +231,7 @@ for i = 1:1
     te_l = [];
     idx = [];
     
-    while curr <= totalassets
+    while curr <= limit
         disp(curr);
 
         total_n = 0;
@@ -303,12 +307,13 @@ for i = 1:1
                 z_l >= 0
         %         transpose(z_c)*z_c <= power(C,2)
                 z_l - power(I - transpose(currR)*pimat_l, 2) - delta * sum(pimat_l) >= 0
+                
+                sum(pimat_l) <= 1
                 pimat_l >= 0
-                sum(pimat_l) == 1
                 
                 % QUESTION: Should this norm constraint be in CVAR as well?
                 % Note: This performs better without this constraint
-                norm(pimat_l) <= C
+%                 norm(pimat_l) <= C
         cvx_end
 
         % Calculating Tracking Error
@@ -357,7 +362,7 @@ count_a = 0;
 count_c = 0;
 
 
-for i = 1:totalassets
+for i = 1:limit
     if(pimat_n(i) < 0.0001)
         count_n = count_n+1;
     end
