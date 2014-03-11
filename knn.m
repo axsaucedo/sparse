@@ -1,60 +1,17 @@
-function [groups] = knn(k)
+function [groups] = knn(data, k)
 
 randn('state',23432);
 rand('state',3454);
-    
-% Getting Data 
-
-%%%%%%%%%%%%%%%%%%% From File %%%%%%%%%%%%%%%%%%
-fI = importdata('../takeda_cvx/FPSEOnlyData');
-fR = importdata('../takeda_cvx/FPSESecuritiesData');
-% fI = fI(1:100,1);
-% fR = fR(1:100,1:50
-% fR = fR(:,10:20);
-T = size(fI, 1) - 1;
-totalassets = size(fR,2);
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%% Returns and Proportions %%%%%%%%%%%%
-
-% Generating Portfolio proportion random matrix with rows adding to 1
-% pimat = rand(totalassets, 1); 
-% pimat = pimat / sum(pimat, 1); % Each value over the total of the sum of
-% columns
-
-% Calculating returns for all individual assets
-R = [];
-for i = 1:totalassets
-    
-    returns = [];
-    
-    for curr = 2:(T+1)
-        returns = [returns, fR(curr, i) / fR(curr-1, i)];
-    end
-    
-    R = [R; returns];
-end
-
-I = [];
-for curr = 2:(T+1)
-    I = [I; fI(curr) / fI(curr-1)];
-end
-
-% Calculating returns for Index
-I = mean(R)';
 
 l = sqrt(k);
 
 % Creating correlation matrix
-corr_mat = corrcoef(R');
+corr_mat = corrcoef(data);
 corr_mat = 1-corr_mat;
 Alower = tril(corr_mat, -1);
 Aupper = triu(corr_mat,  1);
 G_S = Alower(2:end, 1:end) + Aupper(1:end-1, 1:end);
 s = size(G_S,2);
-s
 
 sorted = [];
 index = [];
@@ -85,8 +42,6 @@ for i = 1:s
 end
 
 % Computing Laplacian Matrix
-size(D_S)
-size(W_S)
 L_S = D_S - W_S;
 
 % Get eigen values of L
@@ -114,9 +69,7 @@ results = cell(1,k);
 
 for i = 1:s
     curr = group_index(i);
-    results{curr} = [ results{curr} ; R(i,:)];
+    results{curr} = [ results{curr} ; data(i,:)];
 end
 
 groups = results;
-
-% plot(groups);
