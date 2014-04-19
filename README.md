@@ -22,3 +22,5 @@ The two main regression families that are considered in this project are sparse 
 
 ## Installation
 The code for this paper depends on two main libraries - namely CVX and SPAMS
+
+## References
