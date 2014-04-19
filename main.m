@@ -195,8 +195,8 @@ step = 12;
 curr = step;
 limit = totalassets;
 
-curr = 36;
-limit = 72;
+% curr = 96;
+% limit = 12;
 
 all_pimat_n = [];
 all_pimat_c = [];
@@ -221,7 +221,7 @@ for i = 1:1
     Beta = .3;
     k = 5;
     divcoef = 1 / (T*(1-Beta));
-    delta = 0.002;
+    delta = 0.03;
     
 %     curr = step;
     

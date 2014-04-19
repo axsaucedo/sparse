@@ -6,7 +6,7 @@ rand('state',3454);
 l = sqrt(k);
 
 % Creating correlation matrix
-corr_mat = corrcoef(data);
+corr_mat = corrcoef(data');
 corr_mat = 1-corr_mat;
 Alower = tril(corr_mat, -1);
 Aupper = triu(corr_mat,  1);
