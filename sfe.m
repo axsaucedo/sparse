@@ -1,3 +1,13 @@
+% SFE - Single Feature Equations
+% This file contains all the equations with single features including:
+% CVX:
+% > NCCVAR Minimization
+% > CVAR Minimization
+% > Least Squares Minimization
+% > Lasso Minimization
+% SPAMS:
+% > Lasso Minimization
+
 clear all;
 
 % Setting random state to get constant answers
@@ -111,28 +121,28 @@ I = mean(R)';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%% Random modelled data %%%%%%%%%%%%%%
-totalassets = 200;
-T = 1000;
-assets = [];
-for i=1:totalassets
-    volatility = .1 + rand()/5-.1;
-    old_price = 100 - rand()*50-25;
-
-    price = [];
-    for j=1:T
-        rnd = rand(); % generate number, 0 <= x < 1.0
-        change_percent = 2 * volatility * rnd;
-        if (change_percent > volatility)
-            change_percent = change_percent-(2 * volatility);
-        end
-        change_amount = old_price * change_percent;
-        new_price = old_price + change_amount;
-        price = [price; old_price/new_price];
-    end
-    assets = [ assets, price ];
-end
-R = assets';
-I = R'*(ones(totalassets,1)/totalassets);
+% totalassets = 200;
+% T = 1000;
+% assets = [];
+% for i=1:totalassets
+%     volatility = .1 + rand()/5-.1;
+%     old_price = 100 - rand()*50-25;
+% 
+%     price = [];
+%     for j=1:T
+%         rnd = rand(); % generate number, 0 <= x < 1.0
+%         change_percent = 2 * volatility * rnd;
+%         if (change_percent > volatility)
+%             change_percent = change_percent-(2 * volatility);
+%         end
+%         change_amount = old_price * change_percent;
+%         new_price = old_price + change_amount;
+%         price = [price; old_price/new_price];
+%     end
+%     assets = [ assets, price ];
+% end
+% R = assets';
+% I = R'*(ones(totalassets,1)/totalassets);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%% MAIN CVX PROGRAM %%%%%%%%%%%%%%%
@@ -225,9 +235,9 @@ k = 1;
 C = 1/sqrt(totalassets) + k*(1-1/sqrt(totalassets))/(10*sqrt(totalassets));
 divcoef = 1 / (T*(1-Beta));
 
-delta = 0.00;
+delta = 1.0;
 
-cvx_n = 200;
+cvx_n = 80;
 cvx_R = R(1:cvx_n,:);
 cvx_I = I;
 
@@ -256,7 +266,7 @@ cvx_begin quiet
     minimize( Alpha_c + divcoef * sum(z_c) )
     subject to
         z_c >= 0
-        (cvx_I - transpose(cvx_R)*pimat_c + Alpha_c + z_c >= 0
+        z_c - (cvx_I - transpose(cvx_R)*pimat_c) + Alpha_c >= 0
         pimat_c >= 0
         sum(pimat_c) == 1
 
@@ -283,38 +293,29 @@ cvx_end
 % CVX to find optimal value for Lasso
 cvx_begin quiet
     variable z_l(T)
-    variable pimat_l(cvx_n)
-    % This is the same as: minimize( sum(power(I - transpose(currR)*pimat_l, 2) + delta * sum(pimat_l)) )
-%     minimize( sum(z_l) )
-    minimize(sum(abs(cvx_I - transpose(cvx_R)*pimat_l) + delta * sum(pimat_l)))
+    variable pimat_l(totalassets)
+    
+    minimize(sum(power(I - transpose(R)*pimat_l, 2)) + delta*sum(pimat_l))
+    
     subject to
-%         z_l >= 0
-%         z_l - power(cvx_I - transpose(cvx_R)*pimat_l, 2) - delta * sum(pimat_l) >= 0
-
         sum(pimat_l) <= 1
         pimat_l >= 0
-
-        % QUESTION: Should this norm constraint be in CVAR as well?
-        % Note: This performs better without this constraint
-%         norm(pimat_l) <= C
 cvx_end
 
-pimats_cvx = [pimat_n pimat_c pimat_a pimat_l];
+pimats_cvx = [pimat_n pimat_c pimat_a ];
 
 % Calculating Tracking Error
-cvx_Ret = [ abs(I - cvx_R' * pimat_n) ...
+cvx_Ret = [ 
+            abs(I - cvx_R' * pimat_n) ...
             abs(I - cvx_R' * pimat_c) ...
             abs(I - cvx_R' * pimat_a) ...
-            abs(I - cvx_R' * pimat_l)]
+            abs(I - R' * pimat_l)
+          ]
 
 % Tracking Errors
 te = sum(cvx_Ret)
 
-% % CVX Variables
-Beta = .3;
-k = 5;
-divcoef = 1 / (T*(1-Beta));
-delta = 0.00;
+
 
 
 % % SPAMS Variables
@@ -357,70 +358,70 @@ group_size = 5;
 
 % Group Lasso
 
-fprintf('\nFISTA + Group Lasso L2\n');
-param.regul='group-lasso-l2';
-param2=param;
-param2.lambda=0.5;
-param2.size_group=group_size;  % all the groups are of size 2
-tic
-[full_pimat_glf optim_info]=mexFistaFlat(Y,X,W0,param2);
-t=toc;
-pimat_glf=full_pimat_glf/sum(full_pimat_glf);
-fprintf('mean loss: %f, mean relative duality_gap: %f, time: %f, number of iterations: %f\n',mean(optim_info(1,:)),mean(optim_info(3,:)),t,mean(optim_info(4,:)));
-
-
-fprintf('\nFISTA + Group Lasso L2 with variable size of groups \n');
-param.regul='group-lasso-l2';
-param2=param;
-param2.groups=groups;  % all the groups are of size 2
-param2.lambda=10*param2.lambda;
-% tpm_param=param2
-tic
-[full_pimat_glv optim_info]=mexFistaFlat(Y,X,W0,param2);
-t=toc;
-pimat_glv=full_pimat_glv/sum(full_pimat_glv);
-fprintf('mean loss: %f, mean relative duality_gap: %f, time: %f, number of iterations: %f\n',mean(optim_info(1,:)),mean(optim_info(3,:)),t,mean(optim_info(4,:)));
-
-
-fprintf('\nFISTA + Group Lasso L2 with variable size of groups \n');
-param.regul='sparse-group-lasso-l2';
-param2=param;
-param2.size_group=group_size;  % all the groups are of size 2
+% fprintf('\nFISTA + Group Lasso L2\n');
+% param.regul='group-lasso-l2';
+% param2=param;
+% param2.lambda=0.5;
+% param2.size_group=group_size;  % all the groups are of size 2
+% tic
+% [full_pimat_glf optim_info]=mexFistaFlat(Y,X,W0,param2);
+% t=toc;
+% pimat_glf=full_pimat_glf/sum(full_pimat_glf);
+% fprintf('mean loss: %f, mean relative duality_gap: %f, time: %f, number of iterations: %f\n',mean(optim_info(1,:)),mean(optim_info(3,:)),t,mean(optim_info(4,:)));
+% 
+% 
+% fprintf('\nFISTA + Group Lasso L2 with variable size of groups \n');
+% param.regul='group-lasso-l2';
+% param2=param;
+% param2.groups=groups;  % all the groups are of size 2
 % param2.lambda=10*param2.lambda;
-param2.lambda=0.01;
-param2.lambda2=0.01;
-% tpm_param=param2
-tic
-[full_pimat_sglf optim_info]=mexFistaFlat(Y,X,W0,param2);
-t=toc;
-pimat_sglf=full_pimat_sglf/sum(full_pimat_sglf);
-fprintf('mean loss: %f, mean relative duality_gap: %f, time: %f, number of iterations: %f\n',mean(optim_info(1,:)),mean(optim_info(3,:)),t,mean(optim_info(4,:)));
-
-
-
-fprintf('\nFISTA + Group Lasso L2 with variable size of groups \n');
-param.regul='sparse-group-lasso-l2';
-param2=param;
-param2.groups=groups;  % all the groups are of size 2
-param2.lambda=param.lambda/2;
-param2.lambda2=param.lambda/2;
-% tpm_param=param2
-tic
-[full_pimat_sglv optim_info]=mexFistaFlat(Y,X,W0,param2);
-t=toc;
-pimat_sglv=full_pimat_sglv/sum(full_pimat_sglv);
-fprintf('mean loss: %f, mean relative duality_gap: %f, time: %f, number of iterations: %f\n',mean(optim_info(1,:)),mean(optim_info(3,:)),t,mean(optim_info(4,:)));
-
-
-pimats_g = [pimat_glf, pimat_glv, pimat_sglf, pimat_sglv]
+% % tpm_param=param2
+% tic
+% [full_pimat_glv optim_info]=mexFistaFlat(Y,X,W0,param2);
+% t=toc;
+% pimat_glv=full_pimat_glv/sum(full_pimat_glv);
+% fprintf('mean loss: %f, mean relative duality_gap: %f, time: %f, number of iterations: %f\n',mean(optim_info(1,:)),mean(optim_info(3,:)),t,mean(optim_info(4,:)));
+% 
+% 
+% fprintf('\nFISTA + Group Lasso L2 with variable size of groups \n');
+% param.regul='sparse-group-lasso-l2';
+% param2=param;
+% param2.size_group=group_size;  % all the groups are of size 2
+% % param2.lambda=10*param2.lambda;
+% param2.lambda=0.01;
+% param2.lambda2=0.01;
+% % tpm_param=param2
+% tic
+% [full_pimat_sglf optim_info]=mexFistaFlat(Y,X,W0,param2);
+% t=toc;
+% pimat_sglf=full_pimat_sglf/sum(full_pimat_sglf);
+% fprintf('mean loss: %f, mean relative duality_gap: %f, time: %f, number of iterations: %f\n',mean(optim_info(1,:)),mean(optim_info(3,:)),t,mean(optim_info(4,:)));
+% 
+% 
+% 
+% fprintf('\nFISTA + Group Lasso L2 with variable size of groups \n');
+% param.regul='sparse-group-lasso-l2';
+% param2=param;
+% param2.groups=groups;  % all the groups are of size 2
+% param2.lambda=param.lambda/2;
+% param2.lambda2=param.lambda/2;
+% % tpm_param=param2
+% tic
+% [full_pimat_sglv optim_info]=mexFistaFlat(Y,X,W0,param2);
+% t=toc;
+% pimat_sglv=full_pimat_sglv/sum(full_pimat_sglv);
+% fprintf('mean loss: %f, mean relative duality_gap: %f, time: %f, number of iterations: %f\n',mean(optim_info(1,:)),mean(optim_info(3,:)),t,mean(optim_info(4,:)));
+% 
+% 
+% pimats_g = [pimat_glf, pimat_glv, pimat_sglf, pimat_sglv];
 
 
 
 clear param;
 % parameter of the optimization procedure are chosen
 param.pos=true;
-param.L=50; % not more than 20 non-zeros coefficients (default: min(size(D,1),size(D,2)))
-param.lambda=0.00 % not more than 20 non-zeros coefficients
+% param.L=50; % not more than 20 non-zeros coefficients (default: min(size(D,1),size(D,2)))
+param.lambda=0.03; % not more than 20 non-zeros coefficients
 param.numThreads=-1; % number of processors/cores to use; the default choice is -1
                      % and uses all the cores of the machine
 param.mode=2;        % penalized formulation
@@ -432,6 +433,8 @@ fprintf('%f signals processed per second\n',size(X,2)/t);
 alpha_full = full(alpha/sum(alpha));
 te_g = sum(abs(I-R'*alpha_full));
 
-pimats_cvx
+alpha_full_zeros=sum(alpha_full==0)
+pimat_l_zeros=sum(pimat_l<0.001)
+% pimats_cvx
 te
 te_g
