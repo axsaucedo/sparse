@@ -237,7 +237,7 @@ divcoef = 1 / (T*(1-Beta));
 
 delta = 1.0;
 
-cvx_n = 30;
+cvx_n = 20;
 cvx_R = R(1:cvx_n,:);
 cvx_I = I;
 

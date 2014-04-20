@@ -48,8 +48,8 @@ divcoef = 1 / (T*(1-Beta));
 
 delta = 1.0;
 
-subset_n = 30;
-cvx_n = totalassets;
+cvx_n = 20;
+subset_n = cvx_n;
 cvx_R = R(1:cvx_n,:);
 cvx_I = I;
 
@@ -67,19 +67,21 @@ chosen_error_a    = [];
 
 available_a   = linspace(1,cvx_n,cvx_n);
 
-for i=1:cvx_n
+for i=1:subset_n
     
     tic
-    [ optimal_index_a optimal_error_a pimat_a ] = next_optimal(rf.abs, cvx_I, cvx_R, available_a, chosen_a);
+    [ optimal_available_a, optimal_error_a, pimat_a ] = next_optimal(rf.abs, cvx_I, cvx_R, available_a, chosen_a);
     toc
     
+    optimal_index_a = available_a(optimal_available_a);
     chosen_a(optimal_index_a) = true;
     chosen_order_a = [chosen_order_a optimal_index_a];
     chosen_error_a = [chosen_error_a, optimal_error_a];
     
     pimats_a(chosen_a,i)= pimat_a;
+    
     % Removing the index from the available stock subset
-    available_a(optimal)=[];
+    available_a(optimal_available_a) = [];
     
 end
 
