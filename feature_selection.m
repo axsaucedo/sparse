@@ -175,3 +175,27 @@ all_elapsed   = [elapsed_a' elapsed_q' elapsed_r' elapsed_c']
 all_err     = [chosen_error_a' chosen_error_q' chosen_error_r' chosen_error_c']
 all_order   = [chosen_order_a' chosen_order_q' chosen_order_r' chosen_order_c']
 
+
+path='Graphs/feature_selection/';
+
+h1 = figure(1);
+
+idx = linspace(1,100,100);
+idx = idx(20:70);
+plot(idx, all_err(idx,1));
+hold on
+plot(idx, all_err(idx,2), 'red')
+hold on
+plot(idx, all_err(idx,3), 'black')
+hold on
+plot(idx, all_err(idx,4), 'magenta')
+
+lgnd = repmat([' '],10)
+lgnd(1,1:3) = 'Abs';
+lgnd(2,1:7) = 'Squares';
+lgnd(3,1:5) = 'Ridge';
+lgnd(4,1:4) = 'CVaR';
+
+savegraph(h1,'Non-Zero Values','Error',lgnd,fullfile(path,'ftse100_feature_seleciton_zoom'))
+
+
