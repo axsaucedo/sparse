@@ -33,256 +33,171 @@ end
 I = mean(R)';
 
 
+
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Tracking error of Portfolio Subset %%%%%%%
 %Initialize
-step = 12;
-curr = step;
-limit = totalassets;
 
-% curr = 96;
-% limit = 12;
+Beta = 0.8;
+k = 1;
+C = 1/sqrt(totalassets) + k*(1-1/sqrt(totalassets))/(10*sqrt(totalassets));
+divcoef = 1 / (T*(1-Beta));
 
-all_pimat_n = [];
-all_pimat_c = [];
-all_pimat_a = [];
-all_pimat_l = [];
+delta = 1.0;
 
-pimats_n = [];
-pimats_c = [];
-pimats_a = [];
-pimats_l = [];
+subset_n = 30;
+cvx_n = totalassets;
+cvx_R = R(1:cvx_n,:);
+cvx_I = I;
 
 
-idx = [];
+% % % % % % % % % % % Variables % % % % % % % % % % 
+% This array will contain the subset_n of stocks chosen from the index
+%   Avaiable : are the stocks that haven't been added to the set
+%   Values   : are the values obtained when computing our regression function
+%              after adding our selected stock
+pimats_a          = zeros(cvx_n);
+chosen_a          = logical(zeros(1,cvx_n));
+chosen_order_a    = [];
+chosen_error_a    = [];
 
-disp('Calculating Tracking Errors');
-disp('totalassets=');
-disp(totalassets);
+available_a   = linspace(1,cvx_n,cvx_n);
 
-% This loop can be used to test the behaviour of k and B
-for i = 1:1
-
-    Beta = .3;
-    k = 5;
-    divcoef = 1 / (T*(1-Beta));
-    delta = 0.03;
+for i=1:cvx_n
     
-%     curr = step;
+    available_a_n = size(available_a,2)
+    values      = zeros(1,available_a_n);
     
-    te_n = [];
-    te_c = [];
-    te_a = [];
-    te_l = [];
-    idx = [];
-    
-    while curr <= limit
-        disp(curr);
-
-        total_n = 0;
-        total_c = 0;
-        total_a = 0;
-        total_l = 0;
-
-        currR = R(1:curr,:);
-
-        C = 1/sqrt(curr) + k*(1-1/sqrt(curr))/(10*sqrt(curr));
-
-        clearvars pimat_n pimat_c pimat_a;
-        clearvars Alpha_n Alpha_c Alpha_a;
-        clearvars z_n z_c z_a;
-
-        % CVX to find optimal value for NCCVAR
-        cvx_begin quiet
-            variable z_n(T)
-            variable Alpha_n
-            variable pimat_n(curr)
-            minimize( Alpha_n + divcoef * sum(z_n) )
-            subject to
-                z_n >= 0
-                z_n - abs(I - transpose(currR)*pimat_n) + Alpha_n >= 0
-                
-                % QUESTION: This constrain ensures that less assets have a position of 0?
-                % (Also performs better without this constrain)
-                norm(pimat_n) <= C
-                pimat_n >= 0
-                sum(pimat_n) == 1
-        cvx_end
-
-        % CVX to find optimal value for CVAR
-        cvx_begin quiet
-            variable z_c(T)
-            variable Alpha_c
-            variable pimat_c(curr)
-            minimize( Alpha_c + divcoef * sum(z_c) )
-            subject to
-                z_c >= 0
-        %         transpose(z_c)*z_c <= power(C,2)
-                transpose(currR)*pimat_c + Alpha_c + z_c >= 0
-                pimat_c >= 0
-                sum(pimat_c) == 1
-                
-                % QUESTION: Should this norm constraint be in CVAR as well?
-                % Note: This performs better without this constraint
-                norm(pimat_c) <= C
-        cvx_end
-
-        % CVX to find optimal value for Tracking Error Abs
+    tic
+    for j=1:available_a_n
+        
+        selected = available_a(j);
+        chosen_a(selected) = true;
+        
+        curr_R = cvx_R(chosen_a,:);
+        
+        if j == 1 || j == floor(available_a_n/2)
+            disp([i, j, selected, find(chosen_a==1)]);
+        end
+        
+        % Absolute Value Optimization (Abs)
         cvx_begin quiet
             variable z_a(T)
-            variable pimat_a(curr)
-            minimize( (1/T) * sum(z_a) )
+            variable pimat_a(i)
+            minimize( (1/T) * sum(abs(cvx_I - curr_R'*pimat_a)) )
+
             subject to
-                z_a >= 0
-        %         transpose(z_c)*z_c <= power(C,2)
-                z_a - abs(I - transpose(currR)*pimat_a) >= 0
                 pimat_a >= 0
                 sum(pimat_a) == 1
-                % QUESTION: Should this norm constraint be in CVAR as well?
-                norm(pimat_a) <= C
         cvx_end
         
-        % CVX to find optimal value for Lasso
-        cvx_begin quiet
-            variable z_l(T)
-            variable pimat_l(curr)
-            % This is the same as: minimize( sum(power(I - transpose(currR)*pimat_l, 2) + delta * sum(pimat_l)) )
-            minimize( sum(z_l) )
-            subject to
-                z_l >= 0
-        %         transpose(z_c)*z_c <= power(C,2)
-                z_l - power(I - transpose(currR)*pimat_l, 2) - delta * sum(pimat_l) >= 0
-                
-                sum(pimat_l) <= 1
-                pimat_l >= 0
-                
-                % QUESTION: Should this norm constraint be in CVAR as well?
-                % Note: This performs better without this constraint
-%                 norm(pimat_l) <= C
-        cvx_end
-
-        % Calculating Tracking Error
-        Ret_n = abs(I - transpose(currR) * pimat_n);
-        Ret_c = abs(I - transpose(currR) * pimat_c);
-        Ret_a = abs(I - transpose(currR) * pimat_a);
-        Ret_l = abs(I - transpose(currR) * pimat_l);
-
-        % Tracking Errors
-        te_n = [te_n; sum(Ret_n)];
-        te_c = [te_c; sum(Ret_c)];
-        te_a = [te_a; sum(Ret_a)];
-        te_l = [te_l; sum(Ret_l)];
-
-        pimats_n = [pimats_n, [pimat_n ; zeros(totalassets-curr,1)] ];
-        pimats_c = [pimats_c, [pimat_c ; zeros(totalassets-curr,1)] ];
-        pimats_a = [pimats_a, [pimat_a ; zeros(totalassets-curr,1)] ];
-        pimats_l = [pimats_l, [pimat_l ; zeros(totalassets-curr,1)] ];
-
-        idx = [idx ; curr];
-
-        if(curr == totalassets) 
-            break;
-        end
-
-        curr = min(curr + step, totalassets); 
-
+        pimats_a(chosen_a,i)= pimat_a;
+        values(j) = sum(abs(I - curr_R'*pimat_a));
+        chosen_a(selected) = false;
     end
+    toc
     
-    all_pimat_n = [all_pimat_n, te_n];
-    all_pimat_c = [all_pimat_c, te_c];
-    all_pimat_a = [all_pimat_a, te_a]; 
-    all_pimat_l = [all_pimat_l, te_l]; 
+    [values, sorted_index] = sort(values);
+    optimal = sorted_index(1);
+    optimal_index = available_a(optimal)
     
-    figure(i);
-%     plot(idx,all_pimat_n(:,i),'black', idx,all_pimat_c(:,i),'red', idx,all_pimat_a(:,i),'blue', idx,all_pimat_l(:,i),'green');
-    plot(idx,all_pimat_n(:,i),'black', idx,all_pimat_a(:,i),'blue', idx,all_pimat_l(:,i),'green');
+    chosen_a(optimal_index) = true;
+    chosen_order_a = [chosen_order_a optimal_index];
+    chosen_error_a = [chosen_error_a, values(1)];
+    
+    % Removing the index from the available stock subset
+    available_a(optimal)=[];
+    
 end
 
-% legend('NCCVAR', 'CVAR', 'ABS', 'LASSO');
-legend('NCCVAR', 'ABS', 'LASSO');
-
-count_n = 0;
-count_l = 0;
-count_a = 0;
-count_c = 0;
 
 
-for i = 1:limit
-    if(pimat_n(i) < 0.0001)
-        count_n = count_n+1;
-    end
-    
-    if(pimat_l(i) < 0.0001)
-        count_l = count_l+1;
-    end
-    
-    if(pimat_a(i) < 0.0001)
-        count_a = count_a+1;
-    end
-    
-    if(pimat_c(i) < 0.0001)
-        count_c = count_c+1;
-    end
-end
-
-count_n
-count_l
-count_a
-% count_c
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%% Plotting Results %%%%%%%%%%%%%%%
-% RR_n = transpose(R) * pimat_n;
-% RR_c = transpose(R) * pimat_c;
-% RR_a = transpose(R) * pimat_a;
+
+
+
+
+
+
+
+
+
+
+
+
+% % CVX to find optimal value for NCCVAR
+% cvx_begin quiet
+%     variable z_n(T)
+%     variable Alpha_n
+%     variable pimat_n(cvx_n)
+%     minimize( Alpha_n + divcoef * sum(z_n) )
+%     subject to
+%         z_n >= 0
+%         z_n - abs(cvx_I - cvx_R'*pimat_n) + Alpha_n >= 0
 % 
-% idx = transpose(linspace(1,T,T));
-% figure(1)
-% plot(idx,RR_n,'red', idx,RR_c,'blue', idx,RR_a,'green', idx,I,'black');
-
-
-
-
-
-% Checking z on behaviour of Alpha
-% alphamat = transpose(linspace(0,.2,20));
-% alphabehaviour = [];
-% for i = 1:size(alphamat)
-%     disp(i);
-%     curralpha = alphamat(i);
-%     z = [];
-%     cvx_begin quiet
-%         variable z(T)
-%         minimize( divcoef * sum(z) )
-%         subject to
-%             z >= 0
-%             z - abs(I - transpose(R)*pimat) + curralpha >= 0
-%     cvx_end
-%     alphaans = curralpha + divcoef * sum(z,1);
-%     alphabehaviour = [alphabehaviour; curralpha, alphaans];
-% end
-% figure(3)
-% plot(alphabehaviour(:,1),alphabehaviour(:,2))
-
-
-% Checking z on behaviour of Beta
-% betamat = transpose(linspace(0,.99,20));
-% betabehaviour = [];
-% for i = 1:size(betamat)
-%     disp(i);
-%     currbeta = betamat(i);
-%     divcoef = 1 / (T*(1-currbeta));
-%     z = [];
-%     cvx_begin quiet
-%         variable z(T)
-%         minimize( divcoef * sum(z) )
-%         subject to
-%             z >= 0
-%             z - abs(I - transpose(R)*pimat) + Alpha >= 0
-%     cvx_end
-%     betaans = Alpha + divcoef * sum(z,1);
-%     betabehaviour = [betabehaviour; currbeta, betaans];
-% end
-% figure(4)
-% plot(betabehaviour(:,1),betabehaviour(:,2))
+%         % QUESTION: This constrain ensures that less assets have a position of 0?
+%         % (Also performs better without this constrain)
+% %         norm(pimat_n) <= C
+%         pimat_n >= 0
+%         sum(pimat_n) == 1
+% cvx_end
+% 
+% cvx_begin quiet
+%     variable z_c(T)
+%     variable Alpha_c
+%     variable pimat_c(cvx_n)
+%     minimize( Alpha_c + divcoef * sum(z_c) )
+%     subject to
+%         z_c >= 0
+%         z_c - (cvx_I - transpose(cvx_R)*pimat_c) + Alpha_c >= 0
+%         pimat_c >= 0
+%         sum(pimat_c) == 1
+% 
+%         % QUESTION: Should this norm constraint be in CVAR as well?
+%         % Note: This performs better without this constraint
+% %         norm(pimat_c) <= C
+% cvx_end
+% 
+% % CVX to find optimal value for Tracking Error Abs
+% cvx_begin quiet
+%     variable z_a(T)
+%     variable pimat_a(cvx_n)
+%     minimize( (1/T) * sum(z_a) )
+%     subject to
+%         z_a >= 0
+% %         transpose(z_c)*z_c <= power(C,2)
+%         z_a - abs(cvx_I - transpose(cvx_R)*pimat_a) >= 0
+%         pimat_a >= 0
+%         sum(pimat_a) == 1
+%         % QUESTION: Should this norm constraint be in CVAR as well?
+% %         norm(pimat_a) <= C
+% cvx_end
+% 
+% % CVX to find optimal value for Lasso
+% cvx_begin quiet
+%     variable z_l(T)
+%     variable pimat_l(totalassets)
+%     
+%     minimize(sum(power(I - transpose(R)*pimat_l, 2)) + delta*sum(pimat_l))
+%     
+%     subject to
+%         sum(pimat_l) <= 1
+%         pimat_l >= 0
+% cvx_end
+% 
+% pimats_cvx = [pimat_n pimat_c pimat_a ];
+% 
+% % Calculating Tracking Error
+% cvx_Ret = [ 
+%             abs(I - cvx_R' * pimat_n) ...
+%             abs(I - cvx_R' * pimat_c) ...
+%             abs(I - cvx_R' * pimat_a) ...
+%             abs(I - R' * pimat_l)
+%           ]
+% 
+% % Tracking Errors
+% te = sum(cvx_Ret)

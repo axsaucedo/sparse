@@ -48,28 +48,70 @@ divcoef = 1 / (T*(1-Beta));
 
 delta = 1.0;
 
-cvx_n = 80;
+subset_n = 30;
+cvx_n = totalassets;
 cvx_R = R(1:cvx_n,:);
 cvx_I = I;
 
 
+% % % % % % % % % % % Variables % % % % % % % % % % 
+% This array will contain the subset_n of stocks chosen from the index
+%   Avaiable : are the stocks that haven't been added to the set
+%   Values   : are the values obtained when computing our regression function
+%              after adding our selected stock
+pimats_a          = zeros(cvx_n);
+chosen_a          = logical(zeros(1,cvx_n));
+chosen_order_a    = [];
+chosen_error_a    = [];
 
-cvx_begin quiet
-    variable z_a(T)
-    variable pimat_a(cvx_n)
-    minimize( (1/T) * sum(abs(cvx_I - transpose(cvx_R)*pimat_a)) )
+available_a   = linspace(1,cvx_n,cvx_n);
+
+for i=1:cvx_n
     
-    subject to
-        pimat_a >= 0
-        sum(pimat_a) == 1
-cvx_end
+    available_a_n = size(available_a,2)
+    values      = zeros(1,available_a_n);
+    
+    tic
+    for j=1:available_a_n
+        
+        selected = available_a(j);
+        chosen_a(selected) = true;
+        
+        curr_R = cvx_R(chosen_a,:);
+        
+        if j == 1 || j == floor(available_a_n/2)
+            disp([i, j, selected, find(chosen_a==1)]);
+        end
+        
+        % Absolute Value Optimization (Abs)
+        cvx_begin quiet
+            variable z_a(T)
+            variable pimat_a(i)
+            minimize( (1/T) * sumabs(cvx_I, curr_R,pimat_a) )
 
-
-
-
-
-
-
+            subject to
+                pimat_a >= 0
+                sum(pimat_a) == 1
+        cvx_end
+        
+        pimats_a(chosen_a,i)= pimat_a;
+        values(j) = sum(abs(I - curr_R'*pimat_a));
+        chosen_a(selected) = false;
+    end
+    toc
+    
+    [values, sorted_index] = sort(values);
+    optimal = sorted_index(1);
+    optimal_index = available_a(optimal)
+    
+    chosen_a(optimal_index) = true;
+    chosen_order_a = [chosen_order_a optimal_index];
+    chosen_error_a = [chosen_error_a, values(1)];
+    
+    % Removing the index from the available stock subset
+    available_a(optimal)=[];
+    
+end
 
 
 

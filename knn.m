@@ -1,8 +1,5 @@
 function [groups] = knn(data, k)
 
-randn('state',23432);
-rand('state',3454);
-
 l = sqrt(k);
 
 % Creating correlation matrix

@@ -237,7 +237,7 @@ divcoef = 1 / (T*(1-Beta));
 
 delta = 1.0;
 
-cvx_n = 80;
+cvx_n = 30;
 cvx_R = R(1:cvx_n,:);
 cvx_I = I;
 
@@ -248,31 +248,29 @@ cvx_begin quiet
     variable Alpha_n
     variable pimat_n(cvx_n)
     minimize( Alpha_n + divcoef * sum(z_n) )
+    
     subject to
         z_n >= 0
         z_n - abs(cvx_I - cvx_R'*pimat_n) + Alpha_n >= 0
 
-        % QUESTION: This constrain ensures that less assets have a position of 0?
-        % (Also performs better without this constrain)
-%         norm(pimat_n) <= C
         pimat_n >= 0
         sum(pimat_n) == 1
 cvx_end
 
+% CVAR Minimization
 cvx_begin quiet
     variable z_c(T)
     variable Alpha_c
     variable pimat_c(cvx_n)
     minimize( Alpha_c + divcoef * sum(z_c) )
+    
     subject to
         z_c >= 0
         z_c - (cvx_I - transpose(cvx_R)*pimat_c) + Alpha_c >= 0
+        
         pimat_c >= 0
         sum(pimat_c) == 1
-
-        % QUESTION: Should this norm constraint be in CVAR as well?
-        % Note: This performs better without this constraint
-%         norm(pimat_c) <= C
+        
 cvx_end
 
 % CVX to find optimal value for Tracking Error Abs
@@ -290,6 +288,19 @@ cvx_begin quiet
 %         norm(pimat_a) <= C
 cvx_end
 
+% CVX to find least squares
+cvx_begin quiet
+    variable z_q(T)
+    variable pimat_q(cvx_n)
+    
+    minimize(sum(power(cvx_I - cvx_R'*pimat_q, 2)))
+    
+    subject to
+        sum(pimat_q) <= 1
+        pimat_q >= 0
+cvx_end
+
+
 % CVX to find optimal value for Lasso
 cvx_begin quiet
     variable z_l(T)
@@ -306,9 +317,10 @@ pimats_cvx = [pimat_n pimat_c pimat_a ];
 
 % Calculating Tracking Error
 cvx_Ret = [ 
-            abs(I - cvx_R' * pimat_n) ...
-            abs(I - cvx_R' * pimat_c) ...
-            abs(I - cvx_R' * pimat_a) ...
+            abs(I - cvx_R' * pimat_n)   ...
+            abs(I - cvx_R' * pimat_c)   ...
+            abs(I - cvx_R' * pimat_a)   ...
+            abs(I - cvx_R' * pimat_q)       ...
             abs(I - R' * pimat_l)
           ]
 
