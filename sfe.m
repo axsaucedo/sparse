@@ -237,25 +237,38 @@ divcoef = 1 / (T*(1-Beta));
 
 delta = 1.0;
 
-cvx_n = 20;
+cvx_n = 80;
 cvx_R = R(1:cvx_n,:);
 cvx_I = I;
 
 
-% CVX to find optimal value for NCCVAR
+% % CVX to find optimal value for NCCVAR
+% cvx_begin quiet
+%     variable z_n(T)
+%     variable Alpha_n
+%     variable pimat_n(cvx_n)
+%     minimize( Alpha_n + divcoef * sum(z_n) )
+%     
+%     subject to
+%         z_n >= 0
+%         z_n - (abs(I - transpose(cvx_R)*pimat_n) - Alpha_n) >= 0
+%         
+%         pimat_n >= 0
+%         sum(pimat_n) == .8
+% cvx_end
+% pimat_n = pimat_n/sum(pimat_n);
+
+% CVX to find optimal value for L0+L2
 cvx_begin quiet
-    variable z_n(T)
     variable Alpha_n
     variable pimat_n(cvx_n)
-    minimize( Alpha_n + divcoef * sum(z_n) )
+    minimize( sum(norm(I - transpose(cvx_R)*pimat_n)) + sum(norm(pimat_n)) )
     
     subject to
-        z_n >= 0
-        z_n - abs(cvx_I - cvx_R'*pimat_n) + Alpha_n >= 0
-
         pimat_n >= 0
         sum(pimat_n) == 1
 cvx_end
+
 
 % CVAR Minimization
 cvx_begin quiet
@@ -266,7 +279,7 @@ cvx_begin quiet
     
     subject to
         z_c >= 0
-        z_c - (cvx_I - transpose(cvx_R)*pimat_c) + Alpha_c >= 0
+        z_c - abs(cvx_I - transpose(cvx_R)*pimat_c) + Alpha_c >= 0
         
         pimat_c >= 0
         sum(pimat_c) == 1

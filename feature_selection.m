@@ -48,7 +48,7 @@ divcoef = 1 / (T*(1-Beta));
 
 delta = 1.0;
 
-cvx_n       = 10;
+cvx_n       = totalassets;
 subset_n    = cvx_n;
 cvx_R       = R(1:cvx_n,:);
 cvx_I       = I;
@@ -61,15 +61,39 @@ cvx_I       = I;
 %              after adding our selected stock
 rf                = reg_funcs;
 
+
+% % % % % % % ABS % % % % % % % % %
 pimats_a          = zeros(cvx_n);
 chosen_a          = logical(zeros(1,cvx_n));
 chosen_order_a    = [];
 chosen_error_a    = [];
 elapsed_a         = [];
-
 available_a   = linspace(1,cvx_n,cvx_n);
+% % % % % LEAST SQUARES % % % % % %
+pimats_q          = zeros(cvx_n);
+chosen_q          = logical(zeros(1,cvx_n));
+chosen_order_q    = [];
+chosen_error_q    = [];
+elapsed_q         = [];
+available_q   = linspace(1,cvx_n,cvx_n);
+% % % % % % % NCCVaR % % % % % % % %
+pimats_r          = zeros(cvx_n);
+chosen_r          = logical(zeros(1,cvx_n));
+chosen_order_r    = [];
+chosen_error_r    = [];
+elapsed_r         = [];
+available_r   = linspace(1,cvx_n,cvx_n);
+% % % % % % % CVaR % % % % % % % % %
+pimats_c          = zeros(cvx_n);
+chosen_c          = logical(zeros(1,cvx_n));
+chosen_order_c    = [];
+chosen_error_c    = [];
+elapsed_c         = [];
+available_c   = linspace(1,cvx_n,cvx_n);
+
 
 for i=1:subset_n
+    i
     
     % % % % % % % % % % % % % % % %     
     % % % % % % % ABS
@@ -88,6 +112,66 @@ for i=1:subset_n
     % Removing the index from the available stock subset
     available_a(optimal_available_a) = [];
     
+    
+    
+    % % % % % % % % % % % % % % % %     
+    % % % % % % % LEAST SQUARES
+    tic
+    [ optimal_available_q, optimal_error_q, pimat_q ] = next_optimal(rf.squares, cvx_I, cvx_R, available_q, chosen_q)
+    elapsed=toc
+    
+    optimal_index_q             = available_q(optimal_available_q);
+    chosen_q(optimal_index_q)   = true;
+    chosen_order_q              = [chosen_order_q optimal_index_q];
+    chosen_error_q              = [chosen_error_q, optimal_error_q];
+    elapsed_q                   = [ elapsed_q, elapsed ];
+    
+    pimats_q(chosen_q,i)= pimat_q;
+    
+    % Removing the index from the available stock subset
+    available_q(optimal_available_q) = [];
+    
+    
+    
+    % % % % % % % % % % % % % % % %     
+    % % % % % % % Ridge Regression
+    tic
+    [ optimal_available_r, optimal_error_r, pimat_r ] = next_optimal(rf.ridge, cvx_I, cvx_R, available_r, chosen_r)
+    elapsed=toc
+    
+    optimal_index_r             = available_r(optimal_available_r);
+    chosen_r(optimal_index_r)   = true;
+    chosen_order_r              = [chosen_order_r optimal_index_r];
+    chosen_error_r              = [chosen_error_r, optimal_error_r];
+    elapsed_r                   = [ elapsed_r, elapsed ];
+    
+    pimats_r(chosen_r,i)= pimat_r;
+    
+    % Removing the index from the available stock subset
+    available_r(optimal_available_r) = [];
+    
+    
+    
+    % % % % % % % % % % % % % % % %     
+    % % % % % % % CVaR
+    tic
+    [ optimal_available_c, optimal_error_c, pimat_c ] = next_optimal(rf.cvar, cvx_I, cvx_R, available_c, chosen_c)
+    elapsed=toc
+    
+    optimal_index_c             = available_c(optimal_available_c);
+    chosen_c(optimal_index_c)   = true;
+    chosen_order_c              = [chosen_order_c optimal_index_c];
+    chosen_error_c              = [chosen_error_c, optimal_error_c];
+    elapsed_c                   = [ elapsed_c, elapsed ];
+    
+    pimats_c(chosen_c,i)= pimat_c;
+    
+    % Removing the index from the available stock subset
+    available_c(optimal_available_c) = [];
+    
 end
 
+all_elapsed   = [elapsed_a' elapsed_q' elapsed_r' elapsed_c']
+all_err     = [chosen_error_a' chosen_error_q' chosen_error_r' chosen_error_c']
+all_order   = [chosen_order_a' chosen_order_q' chosen_order_r' chosen_order_c']
 

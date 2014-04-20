@@ -18,21 +18,13 @@ for j=1:available_n
     curr_R = R(chosen,:);
 
 %     if ~mod(j,10)  
-%         disp([n, j, selected, find(chosen==1)]);
+        disp([n, j, selected, find(chosen==1)]);
 %     end
 
     % Absolute Value Optimization (Abs)
-    cvx_begin quiet
-        variable z(T)
-        variable pimat(n)
-        minimize( rf(I, curr_R, pimat) )
+    [ pimat, error ] = rf(I, curr_R, T, n);
 
-        subject to
-            pimat >= 0
-            sum(pimat) == 1
-    cvx_end
-
-    values(j) = rf(I, curr_R, pimat);
+    values(j) = error;
     chosen(selected) = false;
 end
 
