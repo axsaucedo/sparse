@@ -277,7 +277,7 @@ cvx_end
 cvx_begin quiet
     variable z_a(T)
     variable pimat_a(cvx_n)
-    minimize( (1/T) * sum(z_a) )
+    minimize( sum(z_a) )
     subject to
         z_a >= 0
 %         transpose(z_c)*z_c <= power(C,2)
