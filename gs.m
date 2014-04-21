@@ -1,75 +1,18 @@
 randn('state',23432);
 rand('state',3454);
 
-fR = importdata('FPSESecuritiesData');
-fR = fR(1:270,:);
+%% MAIN PROGRAM %%
+d = datasets;
+rf = reg_funcs;
 
-T = size(fR, 1)-1;
-totalassets = size(fR,2);
-
-% Calculating returns for all individual assets
-R = [];
-for i = 1:totalassets
-    
-    returns = [];
-    
-    for curr = 2:(T+1)
-        returns = [returns, fR(curr, i) / fR(curr-1, i)];
-    end
-    
-    R = [R; returns];
-end
-
-% Calculating returns for Index
-I = mean(R)';
-
-
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %%%%%%%%%%%% Random modelled data %%%%%%%%%%%%%%
-% totalassets = 200;
-% T = 1000;
-% assets = [];
-% for i=1:totalassets
-%     volatility = .1 + rand()/5-.1;
-%     old_price = 100 - rand()*50-25;
-% 
-%     price = [];
-%     for j=1:T
-%         rnd = rand(); % generate number, 0 <= x < 1.0
-%         change_percent = 2 * volatility * rnd;
-%         if (change_percent > volatility)
-%             change_percent = change_percent-(2 * volatility);
-%         end
-%         change_amount = old_price * change_percent;
-%         new_price = old_price + change_amount;
-%         price = [price; old_price/new_price];
-%     end
-%     assets = [ assets, price ];
-% end
-% R = assets';
-% I = R'*(ones(totalassets,1)/totalassets);
-
-
-
-
-
-
-
-
-
-
+% Get Data
+[ I, R, totalassets, T ] = d.yahoo_finance();
+% [ I, R, totalassets, T ] = d.yahoo_finance(200,1000);
 
 
 
 %% MAIN CVX PROGRAM %%
 
-rf = reg_funcs;
-
-Beta = 0.8;
-k = 1;
-C = 1/sqrt(totalassets) + k*(1-1/sqrt(totalassets))/(10*sqrt(totalassets));
-divcoef = 1 / (T*(1-Beta));
 
 % Calculating n groups with knn + kmeans
 n = 8;
@@ -185,8 +128,6 @@ for i = 1:totalcombinations
     end
     
     curr_totalassets = size(currR,1);
-    
-    C = 1/sqrt(curr) + k*(1-1/sqrt(curr))/(10*sqrt(curr));
     
     [ pimat_n, error ] = rf.abs(I,currR,T,curr_totalassets);
     
