@@ -34,6 +34,32 @@ I = mean(R)';
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% Random modelled data %%%%%%%%%%%%%%
+totalassets = 200;
+T = 1000;
+assets = [];
+for i=1:totalassets
+    volatility = .1 + rand()/5-.1;
+    old_price = 100 - rand()*50-25;
+
+    price = [];
+    for j=1:T
+        rnd = rand(); % generate number, 0 <= x < 1.0
+        change_percent = 2 * volatility * rnd;
+        if (change_percent > volatility)
+            change_percent = change_percent-(2 * volatility);
+        end
+        change_amount = old_price * change_percent;
+        new_price = old_price + change_amount;
+        price = [price; old_price/new_price];
+    end
+    assets = [ assets, price ];
+end
+R = assets';
+I = R'*(ones(totalassets,1)/totalassets);
+
+
 
 
 
@@ -176,26 +202,26 @@ all_err     = [chosen_error_a' chosen_error_q' chosen_error_r' chosen_error_c']
 all_order   = [chosen_order_a' chosen_order_q' chosen_order_r' chosen_order_c']
 
 
-path='Graphs/feature_selection/';
-
-h1 = figure(1);
-
-idx = linspace(1,100,100);
-idx = idx(20:70);
-plot(idx, all_err(idx,1));
-hold on
-plot(idx, all_err(idx,2), 'red')
-hold on
-plot(idx, all_err(idx,3), 'black')
-hold on
-plot(idx, all_err(idx,4), 'magenta')
-
-lgnd = repmat([' '],10)
-lgnd(1,1:3) = 'Abs';
-lgnd(2,1:7) = 'Squares';
-lgnd(3,1:5) = 'Ridge';
-lgnd(4,1:4) = 'CVaR';
-
-savegraph(h1,'Non-Zero Values','Error',lgnd,fullfile(path,'ftse100_feature_seleciton_zoom'))
+% path='Graphs/feature_selection/';
+% 
+% h1 = figure(1);
+% 
+% idx = linspace(1,100,100);
+% idx = idx(20:70);
+% plot(idx, all_err(idx,1));
+% hold on
+% plot(idx, all_err(idx,2), 'red')
+% hold on
+% plot(idx, all_err(idx,3), 'black')
+% hold on
+% plot(idx, all_err(idx,4), 'magenta')
+% 
+% lgnd = repmat([' '],10)
+% lgnd(1,1:3) = 'Abs';
+% lgnd(2,1:7) = 'Squares';
+% lgnd(3,1:5) = 'Ridge';
+% lgnd(4,1:4) = 'CVaR';
+% 
+% savegraph(h1,'Non-Zero Values','Error',lgnd,fullfile(path,'ftse100_feature_seleciton_zoom'))
 
 
