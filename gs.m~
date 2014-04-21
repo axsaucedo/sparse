@@ -65,39 +65,34 @@ for i = 1:n
     end
 end
 
-
 group_idx = logical(group_idx);
-group_idx = group_idx(1:n,:);
-% n=2;
-% group_idx = group_idx(1:2,:);
-% group_idx(2,:) = ~group_idx(1,:);
+group_idx = group_idx(1:5,:);
+n=2;
+group_idx = group_idx(1:2,:);
+group_idx(2,:) = ~group_idx(1,:);
 
 not_group_idx = ~group_idx;
 group_sizes = sum(group_idx,2);
 sqr_group_sizes = sqrt(group_sizes);
 
-delta = 5;
+delta = 0.0;
 
 % CVX to find optimal value for Lasso
 cvx_begin %quiet
-    variable pimat_gl(totalassets,n)
+    variable z_l(T)
+    variable pimat_l(totalassets,n)
     
-    minimize(square_pos(norm(I - sum(R'*pimat_gl,2))) + delta*sum(sqr_group_sizes'*diag(norms(pimat_gl,2,1))) )
+    minimize(norm(I - sum(R'*pimat_l,2)) + delta*sum(sqr_group_sizes'*diag(norms(pimat_l,2,1))) )
     
     subject to
-%         sum(pimat_l(:)) == 1
-        pimat_gl >= 0
-        pimat_gl(not_group_idx') == 0
+        sum(pimat_l(:)) == 1
+        pimat_l >= 0
+        pimat_l(not_group_idx) == 0
 cvx_end
 
-pimat_gl=pimat_gl/sum(pimat_gl(:));
-sum(pimat_gl,2)
-sum(pimat_gl,1)
-sum(abs(I-sum(R'*pimat_gl,2)))
-sum(sum(pimat_gl,2)<0.0001)
+[full([find(not_group_idx(1,:)==1)', pimat_l(not_group_idx(1,:),1)]);
 
-
-
+full([find(~not_group_idx(1,:)==1)', pimat_l(not_group_idx(2,:),1)])]
 
 return
 
