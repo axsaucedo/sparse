@@ -1,9 +1,9 @@
 function data = datasets
-    data.yahoo_finance = @yf;
+    data.ftse100 = @ftse100;
     data.naive = @naive;
 end
 
-function [ I, R, n, T ] = yf()
+function [ I, R, n, T ] = ftse100()
     fR = importdata('FPSESecuritiesData');
     fR = fR(1:270,:);
 
