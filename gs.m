@@ -32,9 +32,13 @@ divcoef = 1 / (T*(1-Beta));
 
 % Calculating n groups with knn + kmeans
 n = 5;
-groups = knn(R, n);
+[index, groups] = knn(R, n);
 combs = [];
 size_combs = [];
+
+% for i = 1:n
+%     
+% end
 
 % Creating indexes for combinations
 for i = 1:n

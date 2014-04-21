@@ -1,4 +1,4 @@
-function [groups] = knn(data, k)
+function [index, groups] = knn(data, k)
 
 l = sqrt(k);
 
@@ -70,3 +70,4 @@ for i = 1:s
 end
 
 groups = results;
+index = group_index;
