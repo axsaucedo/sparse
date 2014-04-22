@@ -125,17 +125,17 @@ elapsed_l   = elapsed_l';
 [ errors_l, zeros_l, deltas_l, elapsed_l ]
 
 
-% path = 'Graphs/Lasso/delta_behaviour/';
-% h1=figure(1);
+path = 'Graphs/Lasso/delta_behaviour/';
+h1=figure(1);
 
-% plot(deltas_l, zeros_l);
-% savegraph(h1,'Delta','# Zero Elements','Deltas - Zeros',fullfile(path,'ftse100_delta_zero'));
+plot(deltas_l, zeros_l);
+savegraph(h1,'Lambda','# Zero Elements','Lambda - Zeros',fullfile(path,'stochastic_lambda_zero'));
 
-% plot(deltas_l, zeros_l);
-% savegraph(h1,'Delta','# Zero Elements','Deltas - Zeros',fullfile(path,'ftse100_delta_zero'));
-% 
-% plot(deltas_l, zeros_l);
-% savegraph(h1,'Delta','# Zero Elements','Deltas - Zeros',fullfile(path,'ftse100_delta_zero'));
+plot(deltas_l, errors_l);
+savegraph(h1,'Lambda','Error','Lambda - Error',fullfile(path,'stochastic_lambda_error'));
+
+plot(zeros_l, errors_l);
+savegraph(h1,'# Zero Elements','Error','Zero - Error',fullfile(path,'stochastic_zero_error'));
 
 
 

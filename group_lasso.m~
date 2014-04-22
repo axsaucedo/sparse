@@ -65,85 +65,103 @@ sqr_group_sizes = sqrt(group_sizes);
 
 
 
-%% Values for iterating on deltas
-delta = 0;
-limit = 10;
-iterations = 10;
+%% Values for iterating on Group Lasso Lambdas
+lambda = 0;
+limit = 50;
+iterations = 200;
 
 cvx_n = totalassets;
 cvx_R = R(1:cvx_n,:);
 cvx_I = I;
 
-errors_l = [];
-zeros_l = [];
-deltas_l = [];
-elapsed_l = [];
+errors_gl = [];
+zeros_gl = [];
+lambdas_gl = [];
+elapsed_gl = [];
+pimat_sums_gl = [];
 
+
+% for i=1:iterations
+%     i
+%     
+%     % CVX to find optimal value for Group Lasso
+%     tic
+%     cvx_begin quiet
+%         variable pimat_gl(totalassets,n)
+% 
+%         minimize(sum_square_pos(norm(I - sum(R'*pimat_gl,2))) + lambda*sum(sqr_group_sizes'*diag(norms(pimat_gl,2,1))) )
+% 
+%         subject to
+%             pimat_gl >= 0
+%             pimat_gl(not_group_idx') == 0
+%     cvx_end
+%     elapsed=toc
+% 
+%     pimat_gl        = full(pimat_gl);
+%     pimat_norm_gl   = full(pimat_gl/sum(pimat_gl(:)));
+% 
+% %     sum(pimat_norm_gl,2)
+% %     sum(pimat_norm_gl,1)
+% %     sum(pimat_gl(:))
+% %     sum(abs(I-sum(R'*pimat_norm_gl,2)))
+%     
+%     
+%     error_gl = sum(abs(I - sum(R'*pimat_norm_gl,2)));
+%     zero_gl = sum(sum(pimat_norm_gl,2)<0.0001);
+%     
+%     errors_gl    = [ errors_gl, error_gl ];
+%     zeros_gl     = [ zeros_gl, zero_gl ];
+%     lambdas_gl    = [ lambdas_gl, lambda ];
+%     elapsed_gl   = [ elapsed_gl,  elapsed];
+%     pimat_sums_gl = [ pimat_sums_gl;  sum(pimat_norm_gl,1)];
+%     
+%     [elapsed, zero_gl, lambda]
+%     
+%     lambda = lambda + limit/iterations;
+% end
+
+
+%% Sparse Group Lasso
+
+% alpha = .3;
+
+l1_groups = 0.0005;
+l2_features = 5;
 
 % CVX to find optimal value for Lasso
 cvx_begin %quiet
-    variable pimat_gl(totalassets,n)
+    variable pimat_sgl(totalassets,n)
     
-    minimize(sum_square_pos(norm(I - sum(R'*pimat_gl,2))) + lambda*sum(sqr_group_sizes'*diag(norms(pimat_gl,2,1))) )
+    minimize(sum_square_pos(norm(I - sum(R'*pimat_sgl,2))) + l1_groups*sum(sqr_group_sizes'*diag(norms(pimat_sgl,2,1))) + l2_features*sum(abs(pimat_sgl(:))) )
     
     subject to
-%         sum(pimat_gl(:)) == 1
-        pimat_gl >= 0
-        pimat_gl(not_group_idx') == 0
+%         sum(pimat_sgl(:)) == 1
+%         pimat_sgl >= 0 
+        pimat_sgl(not_group_idx') == 0
 cvx_end
 
-pimat_gl        = full(pimat_gl);
-pimat_norm_gl   = full(pimat_gl/sum(pimat_gl(:)));
 
-sum(pimat_norm_gl,2)
-sum(pimat_norm_gl,1)
-sum(pimat_gl(:))
-sum(abs(I-sum(R'*pimat_norm_gl,2)))
-sum(sum(pimat_norm_gl,2)<0.0001)
+pimat_sgl = full(pimat_sgl);
+pimat_norm_sgl=full(pimat_sgl/sum(pimat_sgl(:)));
+sum(pimat_norm_sgl,2)
+sum_of_each_group = sum(pimat_sgl,1)
+original_pimat_result = sum(pimat_sgl(:))
+tracking_error = sum(abs(I-sum(R'*pimat_norm_sgl,2)))
+total_number_of_zeros = sum(sum(pimat_norm_sgl,2)<0.0001)
+zeros_groups = [];
+for i=1:n
+    zeros_groups = [ zeros_groups; sum(group_idx(i,:)) sum(pimat_norm_sgl(group_idx(i,:),i)<0.0001) ]; 
+end
+zeros_groups
 
 
+pimat_norm_gl = full(pimat_norm_gl);
+pimat_norm_sgl = full(pimat_norm_sgl);
 
-% %% Sparse Group Lasso
-% 
-% % alpha = .3;
-% 
-% l1_groups = 0.0005;
-% l2_features = 5;
-% 
-% % CVX to find optimal value for Lasso
-% cvx_begin %quiet
-%     variable pimat_sgl(totalassets,n)
-%     
-%     minimize(sum_square_pos(norm(I - sum(R'*pimat_sgl,2))) + l1_groups*sum(sqr_group_sizes'*diag(norms(pimat_sgl,2,1))) + l2_features*sum(abs(pimat_sgl(:))) )
-%     
-%     subject to
-% %         sum(pimat_sgl(:)) == 1
-% %         pimat_sgl >= 0 
-%         pimat_sgl(not_group_idx') == 0
-% cvx_end
-% 
-% 
-% pimat_sgl = full(pimat_sgl);
-% pimat_norm_sgl=full(pimat_sgl/sum(pimat_sgl(:)));
-% sum(pimat_norm_sgl,2)
-% sum_of_each_group = sum(pimat_sgl,1)
-% original_pimat_result = sum(pimat_sgl(:))
-% tracking_error = sum(abs(I-sum(R'*pimat_norm_sgl,2)))
-% total_number_of_zeros = sum(sum(pimat_norm_sgl,2)<0.0001)
-% zeros_groups = [];
-% for i=1:n
-%     zeros_groups = [ zeros_groups; sum(group_idx(i,:)) sum(pimat_norm_sgl(group_idx(i,:),i)<0.0001) ]; 
-% end
-% zeros_groups
-% 
-% 
-% pimat_norm_gl = full(pimat_norm_gl);
-% pimat_norm_sgl = full(pimat_norm_sgl);
-% 
-% p = [ full(sum(pimat_norm_gl,2)) full(sum(pimat_norm_sgl,2)) ]
-% t = [ sum(pimat_norm_gl,1) sum(pimat_norm_sgl,1) ]
-% e = [ sum(abs(I-sum(R'*pimat_norm_gl,2))) sum(abs(I-sum(R'*pimat_norm_sgl,2))) ]
-% z = [ sum(sum(pimat_norm_gl,2)<0.0001) sum(sum(pimat_norm_sgl,2)<0.0001) ]
+p = [ full(sum(pimat_norm_gl,2)) full(sum(pimat_norm_sgl,2)) ]
+t = [ sum(pimat_norm_gl,1) sum(pimat_norm_sgl,1) ]
+e = [ sum(abs(I-sum(R'*pimat_norm_gl,2))) sum(abs(I-sum(R'*pimat_norm_sgl,2))) ]
+z = [ sum(sum(pimat_norm_gl,2)<0.0001) sum(sum(pimat_norm_sgl,2)<0.0001) ]
 
 
 

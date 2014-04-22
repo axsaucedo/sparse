@@ -65,22 +65,22 @@ sqr_group_sizes = sqrt(group_sizes);
 
 
 
-% %% Values for iterating on Group Lasso Lambdas
-% lambda = 0;
-% limit = 30;
-% iterations = 200;
-% 
-% cvx_n = totalassets;
-% cvx_R = R(1:cvx_n,:);
-% cvx_I = I;
-% 
-% errors_gl = [];
-% zeros_gl = [];
-% lambdas_gl = [];
-% elapsed_gl = [];
-% pimat_sums_gl = [];
-% 
-% 
+%% Values for iterating on Group Lasso Lambdas
+lambda = 0;
+limit = 50;
+iterations = 200;
+
+cvx_n = totalassets;
+cvx_R = R(1:cvx_n,:);
+cvx_I = I;
+
+errors_gl = [];
+zeros_gl = [];
+lambdas_gl = [];
+elapsed_gl = [];
+pimat_sums_gl = [];
+
+
 % for i=1:iterations
 %     i
 %     
@@ -155,13 +155,13 @@ end
 zeros_groups
 
 
-pimat_norm_gl = full(pimat_norm_gl);
-pimat_norm_sgl = full(pimat_norm_sgl);
-
-p = [ full(sum(pimat_norm_gl,2)) full(sum(pimat_norm_sgl,2)) ]
-t = [ sum(pimat_norm_gl,1) sum(pimat_norm_sgl,1) ]
-e = [ sum(abs(I-sum(R'*pimat_norm_gl,2))) sum(abs(I-sum(R'*pimat_norm_sgl,2))) ]
-z = [ sum(sum(pimat_norm_gl,2)<0.0001) sum(sum(pimat_norm_sgl,2)<0.0001) ]
+% pimat_norm_gl = full(pimat_norm_gl);
+% pimat_norm_sgl = full(pimat_norm_sgl);
+% 
+% p = [ full(sum(pimat_norm_gl,2)) full(sum(pimat_norm_sgl,2)) ]
+% t = [ sum(pimat_norm_gl,1) sum(pimat_norm_sgl,1) ]
+% e = [ sum(abs(I-sum(R'*pimat_norm_gl,2))) sum(abs(I-sum(R'*pimat_norm_sgl,2))) ]
+% z = [ sum(sum(pimat_norm_gl,2)<0.0001) sum(sum(pimat_norm_sgl,2)<0.0001) ]
 
 
 
