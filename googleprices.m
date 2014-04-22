@@ -1,4 +1,4 @@
-function ds = googleprices(stockTicker, startDate, endDate)
+function [ ds, close, dates ] = googleprices(stockTicker, startDate, endDate)
 % PURPOSE: Download the historical prices for a given stock from Google
 % Finance and converts it into a MATLAB dataset format.
 %---------------------------------------------------
@@ -25,7 +25,7 @@ function ds = googleprices(stockTicker, startDate, endDate)
 % Date: 15-Jun-2010 17:38:18
 
 if isnumeric(startDate)
-    startDate = datestr(startDate, 'mmm+dd,yyyy');
+    startDate = datestr(startDate, 'mmm+dd%2C+yyyy');
 end
 
 if ~exist('exportFormat', 'var')
@@ -36,14 +36,17 @@ strcat('http://finance.google.com/finance/historical?q=', stockTicker, '&startda
 % Download the data
 fileName = urlwrite(['http://finance.google.com/finance/historical?q=' stockTicker '&startdate=' startDate '&enddate=' endDate '&output=' exportFormat], ['test.' exportFormat]);
 
+
+
 % Import the file as a dataset.
 ds = dataset('file', fileName, 'delimiter', ',');
 
-% Delete the temporary file
-delete(fileName);
+n = size(ds,1);
+close = zeros(1,n);
+dates = cell(1,n);
+for i=1:n
+    dates{i} = ds{i,1};
+    close(i) = ds{i,5};
+end
 
-% Adjust the Date VarName
-names = get(ds, 'VarNames');
-names{:, 1} = 'Date';
-ds = set(ds, 'VarNames', names);
 end
