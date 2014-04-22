@@ -64,25 +64,61 @@ group_sizes = sum(group_idx,2);
 sqr_group_sizes = sqrt(group_sizes);
 
 
-% % CVX to find optimal value for Lasso
-% cvx_begin %quiet
-%     variable pimat_gl(totalassets,n)
-%     
-%     minimize(sum_square_pos(norm(I - sum(R'*pimat_gl,2))) + lambda*sum(sqr_group_sizes'*diag(norms(pimat_gl,2,1))) )
-%     
-%     subject to
-% %         sum(pimat_gl(:)) == 1
-%         pimat_gl >= 0
-%         pimat_gl(not_group_idx') == 0
-% cvx_end
-% 
-% pimat_norm_gl=pimat_gl/sum(pimat_gl(:));
-% sum(pimat_norm_gl,2)
-% sum(pimat_norm_gl,1)
-% sum(pimat_gl(:))
-% sum(abs(I-sum(R'*pimat_norm_gl,2)))
-% sum(sum(pimat_norm_gl,2)<0.0001)
 
+% %% Values for iterating on Group Lasso Lambdas
+% lambda = 0;
+% limit = 30;
+% iterations = 200;
+% 
+% cvx_n = totalassets;
+% cvx_R = R(1:cvx_n,:);
+% cvx_I = I;
+% 
+% errors_gl = [];
+% zeros_gl = [];
+% lambdas_gl = [];
+% elapsed_gl = [];
+% pimat_sums_gl = [];
+% 
+% 
+% for i=1:iterations
+%     i
+%     
+%     % CVX to find optimal value for Group Lasso
+%     tic
+%     cvx_begin quiet
+%         variable pimat_gl(totalassets,n)
+% 
+%         minimize(sum_square_pos(norm(I - sum(R'*pimat_gl,2))) + lambda*sum(sqr_group_sizes'*diag(norms(pimat_gl,2,1))) )
+% 
+%         subject to
+%             pimat_gl >= 0
+%             pimat_gl(not_group_idx') == 0
+%     cvx_end
+%     elapsed=toc
+% 
+%     pimat_gl        = full(pimat_gl);
+%     pimat_norm_gl   = full(pimat_gl/sum(pimat_gl(:)));
+% 
+% %     sum(pimat_norm_gl,2)
+% %     sum(pimat_norm_gl,1)
+% %     sum(pimat_gl(:))
+% %     sum(abs(I-sum(R'*pimat_norm_gl,2)))
+%     
+%     
+%     error_gl = sum(abs(I - sum(R'*pimat_norm_gl,2)));
+%     zero_gl = sum(sum(pimat_norm_gl,2)<0.0001);
+%     
+%     errors_gl    = [ errors_gl, error_gl ];
+%     zeros_gl     = [ zeros_gl, zero_gl ];
+%     lambdas_gl    = [ lambdas_gl, lambda ];
+%     elapsed_gl   = [ elapsed_gl,  elapsed];
+%     pimat_sums_gl = [ pimat_sums_gl;  sum(pimat_norm_gl,1)];
+%     
+%     [elapsed, zero_gl, lambda]
+%     
+%     lambda = lambda + limit/iterations;
+% end
 
 
 %% Sparse Group Lasso
@@ -119,13 +155,92 @@ end
 zeros_groups
 
 
-% pimat_norm_gl = full(pimat_norm_gl);
-% pimat_norm_sgl = full(pimat_norm_sgl);
+pimat_norm_gl = full(pimat_norm_gl);
+pimat_norm_sgl = full(pimat_norm_sgl);
+
+p = [ full(sum(pimat_norm_gl,2)) full(sum(pimat_norm_sgl,2)) ]
+t = [ sum(pimat_norm_gl,1) sum(pimat_norm_sgl,1) ]
+e = [ sum(abs(I-sum(R'*pimat_norm_gl,2))) sum(abs(I-sum(R'*pimat_norm_sgl,2))) ]
+z = [ sum(sum(pimat_norm_gl,2)<0.0001) sum(sum(pimat_norm_sgl,2)<0.0001) ]
+
+
+
+
+
+
+
+
+
+%% Lasso SPAMS
 % 
-% p = [ full(sum(pimat_norm_gl,2)) full(sum(pimat_norm_sgl,2)) ]
-% t = [ sum(pimat_norm_gl,1) sum(pimat_norm_sgl,1) ]
-% e = [ sum(abs(I-sum(R'*pimat_norm_gl,2))) sum(abs(I-sum(R'*pimat_norm_sgl,2))) ]
-% z = [ sum(sum(pimat_norm_gl,2)<0.0001) sum(sum(pimat_norm_sgl,2)<0.0001) ]
+% 
+% % clear all;
+% format compact;
+% randn('seed',0);
+% param.numThreads=-1; % all cores (-1 by default)
+% param.verbose=true;   % verbosity, false by default
+% param.lambda=0.05; % regularization parameter
+% param.it0=10;      % frequency for duality gap computations
+% param.max_it=200; % maximum number of iterations
+% param.L0=0.1;
+% param.tol=1e-3;
+% param.intercept=false;
+% param.pos=true;
+% 
+% param.loss='square';
+% param.compute_gram=true;
 
 
+% X=randn(100,200);
+% X=X-repmat(mean(X),[size(X,1) 1]);
+% X=mexNormalize(X);
+% Y=randn(100,1);
+% Y=Y-repmat(mean(Y),[size(Y,1) 1]);
+% Y=mexNormalize(Y);
+% W0=zeros(size(X,2),size(Y,2));
+% groups=int32(randi(5,1,size(X,2)));
 
+
+% X = mexNormalize(R');
+% Y = mexNormalize(I);
+% W0=zeros(size(X,2),size(Y,2));
+% 
+% groups=int32(index);
+% 
+% lambda = 0.0000;
+% 
+% zeros = [];
+% lambdas = [];
+% te = [];
+% 
+% 
+% fprintf('\nFISTA + Group Lasso L2 with variable size of groups \n');
+% param.regul='group-lasso-l2';
+% param2=param;
+% param2.groups=groups;
+% 
+% while lambda < 1 
+% param2.lambda=lambda;
+% lambda
+% [ignore, W_lasso_var, optim_info]= evalc('mexFistaFlat(Y,X,W0,param2);');
+% zeros = [zeros sum(W_lasso_var==0)];
+% lambdas = [lambdas lambda ];
+% te = [te sum(abs(I-R'*W_lasso_var))];
+% lambda = lambda + 0.0001;
+% end
+% 
+% fprintf('\nFISTA + Group Lasso L2 with variable size of groups \n');
+% param.regul='sparse-group-lasso-l2';
+% param2=param;
+% param2.groups=groups;  % all the groups are of size 2
+% param2.lambda=0.0143295;
+% param2.lambda2=0.07;
+% % tpm_param=param2
+% tic
+% [W_sparse_var optim_info]=mexFistaFlat(Y,X,W0,param2);
+% t=toc;
+% 
+% 
+% [ W_lasso_var W_sparse_var ]
+% [ sum(W_lasso_var==0) sum(W_sparse_var==0) ]
+% [ sum(abs(I-R'*W_lasso_var)) sum(abs(I-R'*W_sparse_var)) ]
