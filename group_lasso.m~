@@ -125,11 +125,13 @@ sqr_group_sizes = sqrt(group_sizes);
 % l2_features = 0;
 % l1_groups = 0;
 
-l2_features = 5;
-l1_groups = 0;
+divcoef=500;
+
+l2_features = 0;
+l1_groups = l2_features/divcoef;
 
 
-iterations = 200;
+iterations = 100;
 
 errors_sgl = [];
 zeros_sgl = [];
@@ -187,17 +189,35 @@ for i=1:iterations
     [elapsed, zero_sgl, lambda]
     
     lambdas_sgl     = [ lambdas_sgl, l2_features ];
-    l2_features = l2_features + 0.05;
+%     l2_features = l2_features + 0.05;
     
 %     l1_groups = l1_groups + 0.00005;
 
-%     l2_features = l2_features + 0.05;
-%     l1_groups = l2_features/10000;
+    l2_features = l2_features + 0.5;
+    l1_groups = l2_features/divcoef;
     
 %     l1_groups       = l1_groups + 100;
 %     l2_features     = l2_features + 100;
     
 end
+
+
+h1=plot(lambdas_sgl, pimat_sums_sgl)
+legend('Group 1','Group 2','Group 3','Group 4','Group 5')
+savegraph(h1,'Lambdas','Group Weights','','')
+
+
+h1=plot(lambdas_sgl, pimats_sgl')
+savegraph(h1,'Lambdas','Feature Weights','','')
+
+
+h1=plot(lambdas_sgl, pimats_sgl')
+savegraph(h1,'Lambdas','Feature Weights','','')
+
+
+t=table(
+
+
 
 % pimat_sgl = full(pimat_sgl);
 % pimat_norm_sgl=full(pimat_sgl/sum(pimat_sgl(:)));
