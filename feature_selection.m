@@ -36,8 +36,8 @@ I = mean(R)';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%% Random modelled data %%%%%%%%%%%%%%
-totalassets = 200;
-T = 1000;
+totalassets = 100;
+T = 300;
 assets = [];
 for i=1:totalassets
     volatility = .1 + rand()/5-.1;

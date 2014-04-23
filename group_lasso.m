@@ -125,11 +125,13 @@ sqr_group_sizes = sqrt(group_sizes);
 % l2_features = 0;
 % l1_groups = 0;
 
-l2_features = 5;
-l1_groups = 0;
+divcoef=500;
+
+l2_features = 0;
+l1_groups = l2_features/divcoef;
 
 
-iterations = 1;
+iterations = 100;
 
 errors_sgl = [];
 zeros_sgl = [];
@@ -187,12 +189,12 @@ for i=1:iterations
     [elapsed, zero_sgl, lambda]
     
     lambdas_sgl     = [ lambdas_sgl, l2_features ];
-    l2_features = l2_features + 0.05;
+%     l2_features = l2_features + 0.05;
     
 %     l1_groups = l1_groups + 0.00005;
 
-%     l2_features = l2_features + 0.05;
-%     l1_groups = l2_features/10000;
+    l2_features = l2_features + 0.5;
+    l1_groups = l2_features/divcoef;
     
 %     l1_groups       = l1_groups + 100;
 %     l2_features     = l2_features + 100;
@@ -302,3 +304,22 @@ end
 % [ W_lasso_var W_sparse_var ]
 % [ sum(W_lasso_var==0) sum(W_sparse_var==0) ]
 % [ sum(abs(I-R'*W_lasso_var)) sum(abs(I-R'*W_sparse_var)) ]
+
+
+% sum_groups      = []; % 5 x 99
+% zero_groups    = []; % 5 x 99
+% 
+% for i=1:99
+%     curr = pimats_a(:,i)
+%     
+%     zero_group_row = [];
+%     sum_group_row = [];
+%     for j=1:5
+%         curr_group = curr(group_idx(j,:));
+%         zero_group_row = [zero_group_row, sum(curr_group==0) ];
+%         sum_group_row = [sum_group_row,  sum(curr_group) ];
+%     end
+%     
+%     zero_groups = [ zero_groups; zero_group_row ];
+%     sum_groups = [ sum_groups; sum_group_row ];
+% end
