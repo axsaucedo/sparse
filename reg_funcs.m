@@ -8,6 +8,7 @@ function regfunc = reg_funcs
     regfunc.sparse_group_lasso  = @sparse_group_lasso;
 end
 
+function [ pimat_a, value_a ] = nccvar(I, R, T, n) end
 
 function [ pimat_a, value_a ] = absval(I, R, T, n)
 

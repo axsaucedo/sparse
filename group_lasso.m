@@ -125,7 +125,7 @@ sqr_group_sizes = sqrt(group_sizes);
 
 l1_groups = 0;
 l2_features = l2_features/10000;
-iterations = 50;
+iterations = 200;
 
 errors_sgl = [];
 zeros_sgl = [];
