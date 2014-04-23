@@ -201,10 +201,10 @@ all_elapsed   = [elapsed_a' elapsed_q' elapsed_r' elapsed_c']
 all_err     = [chosen_error_a' chosen_error_q' chosen_error_r' chosen_error_c']
 all_order   = [chosen_order_a' chosen_order_q' chosen_order_r' chosen_order_c']
 
-l = linspace(1,134,134);
+l = linspace(1,subset_n,subset_n);
 
-total_same = zeros(1,134);
-for i=1:134
+total_same = zeros(1,subset_n);
+for i=1:subset_n
     u=union(union(union(all_order(1:i,1),all_order(1:i,2)),all_order(1:i,3)),all_order(1:i,4))
     total_same(i) = size(u,1)
 end

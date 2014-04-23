@@ -11,7 +11,7 @@ l2_features = 0.1;
 
 % Get Data
 [ I, R, totalassets, T ] = d.ftse100();
-% [ I, R, totalassets, T ] = d.naive(200,1000);
+% [ I, R, totalassets, T ] = d.naive(200,300);
 
 
 %% MAIN CVX PROGRAM %%
@@ -121,11 +121,15 @@ sqr_group_sizes = sqrt(group_sizes);
 %% Values for iterating on Sparse Group Lasso Lambdas
 % l2_features = 4;
 % l1_groups = 0.0;
-% iterations = 200;
 
+% l2_features = 0;
+% l1_groups = 0;
+
+l2_features = 0;
 l1_groups = 0;
-l2_features = l2_features/10000;
-iterations = 200;
+
+
+iterations = 70;
 
 errors_sgl = [];
 zeros_sgl = [];
@@ -175,16 +179,22 @@ for i=1:iterations
     
     errors_sgl      = [ errors_sgl, error_sgl ];
     zeros_sgl       = [ zeros_sgl, zero_sgl ];
-    lambdas_sgl     = [ lambdas_sgl, l2_features ];
     elapsed_sgl     = [ elapsed_sgl,  elapsed];
     pimat_sums_sgl  = [ pimat_sums_sgl;  sum(pimat_norm_sgl,1)];
-    pimats_sgl      = [ pimats_sgl sum(pimat_sgl,2) ];
+    pimats_sgl      = [ pimats_sgl sum(pimat_norm_sgl,2) ];
     zeros_groups_sgl = [zeros_groups_sgl; zeros_groups];
     
     [elapsed, zero_sgl, lambda]
     
+    lambdas_sgl     = [ lambdas_sgl, l2_features ];
+    
 %     l1_groups = l1_groups + 0.00005;
-    l2_features = l2_features + 0.05;
+%     lambdas_sgl     = [ lambdas_sgl, l1_groups ];
+    
+%     l2_features = l2_features + 0.05;
+%     l1_groups = l2_features/10000;
+
+    
 end
 
 % pimat_sgl = full(pimat_sgl);
