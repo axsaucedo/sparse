@@ -150,14 +150,14 @@ for i=1:iterations
     % CVX to find optimal value for Group Lasso
     tic
     cvx_begin %quiet
-        variable pimat_sgl(totalassets)
+        expression pimat_sgl(totalassets)
 
-        minimize(sum_square_pos(norm(I - R'*pimat_sgl)) + l1_groups*norms(pimat_sgl,2,1)*sqr_group_sizes + l2_features*sum(abs(pimat_sgl(:))) )
+        minimize(sum_square_pos(norm(I - R'*pimat_sgl)) + l1_groups*get_norms(pimat_sgl,group_idx)*sqr_group_sizes + l2_features*sum(abs(pimat_sgl(:))) )
 
         subject to
     %         sum(pimat_sgl(:)) == 1
-    %         pimat_sgl >= 0 
-            pimat_sgl(not_group_idx') == 0
+            pimat_sgl >= 0 
+%             pimat_sgl(not_group_idx') == 0
     cvx_end
     elapsed=toc
 

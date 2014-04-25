@@ -1,4 +1,4 @@
-function [ B ] = get_groups( A, G )
+function [ v ] = get_norms( A, G )
 n = size(G,1);
 t = size(A,1);
 
@@ -7,10 +7,11 @@ disp(n);
 disp(t);
 disp(size(G));
 disp(size(A));
-B = zeros(n,t);
+
+v = zeros(1,n);
 
 for i=1:n
-    B(i,G(i,:)) = A(G(i,:));
+    v(i) = norm(A(G(i,:)));
 end
 
 
