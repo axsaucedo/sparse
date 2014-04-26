@@ -5,7 +5,7 @@ function data = datasets
     data.ftse100_google     = @ftse100_google;
 end
 
-function [ I, R, n, T ] = ftse100()
+function [ I, R, n, T, index ] = ftse100()
     fR = importdata('FPSESecuritiesData');
     fR = fR(1:270,:);
 
@@ -27,6 +27,9 @@ function [ I, R, n, T ] = ftse100()
 
     % Calculating returns for Index
     I = mean(R)';
+    
+    % This is the group index based in Stock Sector taken from Google and Yahoo finance
+    index = [1, 3, 5, 5, 9, 9, 4, 1, 7, 5, 6, 9, 5, 5, 3, 4, 5, 1, 9, 4, 2, 2, 1, 3, 8, 9, 9, 1, 3, 9, 9, 1, 9, 2, 4, 6, 1, 5, 5, 1, 2, 9, 3, 9, 2, 1, 2, 5, 5, 5, 5, 9, 2, 1, 9, 3, 8, 2, 5, 1, 5, 2, 2, 2, 5, 4, 4, 9, 1, 1, 9, 9, 1, 5, 5, 2, 3, 5, 7, 6, 5, 9, 6, 2, 8, 5, 8, 3, 1, 9, 3, 2, 2, 8, 7, 9, 2, 2, 7]';
 end
 
 function [ I, R, n, T ] = naive(n, T)

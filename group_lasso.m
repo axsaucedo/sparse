@@ -10,21 +10,22 @@ l1_groups = 0;
 l2_features = 0.1;
 
 % Get Data
-[ I, R, totalassets, T ] = d.ftse100();
-% [ I, R, totalassets, T ] = d.naive(200,300);
+% [ I, R, totalassets, T, index ] = d.ftse100();
+% n = size(unique(index),1);
+[ I, R, totalassets, T ] = d.naive(200,300);
 
 
 %% MAIN CVX PROGRAM %%
 
 
 % Calculating n groups with knn + kmeans
-n = 5;
+n = 9;
 [index, groups] = knn(R, n);
 combs = [];
 size_combs = [];
 
 logical_index = logical(zeros(n,totalassets));
-for i=1:5
+for i=1:n
     logical_index(i,:) = logical(index==i)';
 end
 
@@ -127,11 +128,11 @@ sqr_group_sizes = sqrt(group_sizes);
 
 divcoef=10000;
 
-l2_features = 1;
+l2_features = 0;
 l1_groups = 0;
 
 
-iterations = 1;
+iterations = 50;
 
 errors_sgl = [];
 zeros_sgl = [];
@@ -195,7 +196,7 @@ for i=1:iterations
 %     l1_groups = l1_groups + 0.5;
 
     l2_features = l2_features + 0.5;
-%     l1_groups = l2_features/divcoef;
+    l1_groups = l2_features/divcoef;
     
 %     l1_groups       = l1_groups + 100;
 %     l2_features     = l2_features + 100;
