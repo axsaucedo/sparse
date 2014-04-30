@@ -1,4 +1,4 @@
-# Sparse Group Lasso and Model Selection
+# Sparse and group regression models in Portfolio Optimization 
 ## Introduction
 
 This repo contains the implementation of models studied, analysed and proposed in ["The effects of Sparse and Group Regression models in Portfolio Optimization"](../blob/master/paper.pdf?raw=true).
