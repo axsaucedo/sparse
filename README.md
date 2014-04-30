@@ -1,7 +1,7 @@
 # Sparse and Group Regression models in Portfolio Optimization 
 ## Introduction
 
-This repo contains the implementation of models studied, analysed and proposed in ["The effects of Sparse and Group Regression models in Portfolio Optimization"](../paper.pdf?raw=true).
+This repo contains the implementation of models studied, analysed and proposed in ["The effects of Sparse and Group Regression models in Portfolio Optimization"](../master/paper.pdf?raw=true).
 
 This implementation focuses on finding the effects of Sparse and Group regression approaches to portfolio optimization problems in finance.
 
