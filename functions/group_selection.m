@@ -7,31 +7,10 @@ ds = datasets;   % Datasets
 rf = test_reg_funcs; % Regression Functions
 
 % Get Data
-% [ I, R, totalassets, T, index ] = ds.ftse100();            % FTSE with sectors as groups
+[ I, R, totalassets, T, index ] = ds.ftse100();            % FTSE with sectors as groups
 % [ I, R, totalassets, T, index ] = ds.ftse100(9);             % FTSE with 3 groups created randomly
-% [ I, R, totalassets, T, index ] = ds.naive(200,300,9);    % Stochastic with n number of groups
-[ I, R, totalassets, T, index ]   = ds.monte_carlo(100,300,.1,.3,9);
+% [ I, R, totalassets, T, index ]   = ds.monte_carlo(100,300,.1,.3,9);
 n = size(unique(index),1);
-% 
-% [ cI, cR, cn, cT, ci ]  = ds.ftse100(); 
-% [ sI, sR, sn, sT, si ]  = ds.ftse100(9);  
-% [ mI, mR, mn, mT, mi ]  = ds.monte_carlo(100,300,.1,.3,9);
-% 
-% ct = [];
-% for i=1:9
-%     tmp = sum(sum(corrcoef(cR(ci==i,:)')))/sum(ci==i)^2;
-%     ct = [ct tmp];
-% end
-% st = [];
-% for i=1:9
-%     tmp = sum(sum(corrcoef(sR(si==i,:)')))/sum(si==i)^2;
-%     st = [st tmp];
-% end
-% mt = [];
-% for i=1:9
-%     tmp = sum(sum(corrcoef(mR(mi==i,:)')))/sum(mi==i)^2;
-%     mt = [mt tmp];
-% end
 
 
 combs = [];

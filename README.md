@@ -1,25 +1,32 @@
-# Sparse and group models in portfolio optimization.
+# Sparse Group Lasso and Model Selection
 ## Introduction
 
-This code in this project is based in the models studied, analysed and proposed in the research paper, ["Sparse and Group Regression models in Portfolio Optimization"](../paper.pdf) by Alejandro Saucedo.
+This repo contains the implementation of models studied, analysed and proposed in ["The effects of Sparse and Group Regression models in Portfolio Optimization"](../blob/master/paper.pdf?raw=true).
 
-In this project we focus on Index Tracking, and results are measured through the Tracking Error of our models. Our main obective is to find a subset of a market index that behaces as similar as possible to this respective index.
+This implementation focuses on finding the effects of Sparse and Group regression approaches to portfolio optimization problems in finance.
 
-The two main regression families that are considered in this project are sparse and group-feature regression models.
+## Motivation
 
-### Sparse Regression Models
+Current approaches to portfolio optimization consider stocks as individual entities, and do not exploit the grouping/classifying information available (e.g. Financial Sectors, Industries, Type, etc).
+
+This paper proposes a novel approach to Index Tracking - namely, a sparse, group and sparse group approach.
+
+## Implementation
+This repo contains the implementation of the following models:
+
+#### Feature Regression Models
+* Absolute Values
+* Conditional-Value-at-Risk (CVaR) Optimization
+* Norm-Constrained CVaR Optimization
 * Lasso
-* Feature Selection with simple models
-  * Absolute Values
-  * Conditional-Value-at-Risk (CVaR) Optimization 
-  * Norm-Constrained CVaR Optimization
 
-### Group Regression Models
+#### Group Regression Models
 * Group Selection
 * Group Lasso
 * Sparse Group Lasso
 
-## Installation
-The code for this paper depends on two main libraries - namely CVX and SPAMS
+## Requirements
+This implementation requires the [CVX library](http://cvxr.com/cvx/download/) for solving the convex optimization problems.
 
-## References
+## Usage
+Tests were built to provide intuition when implementing the Sparse Group Regression model into a set of data, however, understanding on these models is required for an effective use;
