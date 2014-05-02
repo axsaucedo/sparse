@@ -31,7 +31,7 @@ pimats_n = cell(1, totalcombinations);
 
 % Loop for all the possible combinations
 for i = 1:totalcombinations
-    fprintf('Testing combination #%d of %d.\n', i, totalcombinations);
+    fprintf('Testing combination #%d out of %d.\n', i, totalcombinations);
     
     currR = [];
     

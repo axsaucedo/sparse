@@ -4,8 +4,7 @@ function regfunc = reg_funcs
     regfunc.cvar    = @cvar;
     regfunc.ridge   = @ridge;
     regfunc.lasso   = @lasso;
-    regfunc.group_lasso         = @group_lasso;
-    regfunc.sgl  = @sparse_group_lasso;
+    regfunc.sglasso  = @sparsegrouplasso;
 end
 
 function [ pimat_a, value_a ] = absval(I, R, T, n)
@@ -81,42 +80,14 @@ function [ pimat_r, value_r ] = ridge(I, R, T, n)
     
 end
 
-function [ pimat_l, value_l ] = lasso(I, R, T, n)
-
-    cvx_begin quiet
-        variable pimat(n)
-        minimize( sum(norm(I - R'*pimat)) + sum(norm(pimat)) )
-
-        subject to
-            pimat >= 0
-            sum(pimat) == 1
-    cvx_end
-    
-    value_l = sum(abs(I - R'*pimat));
-    pimat_l = pimat;
+function [ pimat_l, value_l ] = lasso(I, R, T, n, l)
+    groups = ones(1:n);
+    pimat_l = sparsegrouplasso(I,R,groups,0,l);
     
 end
 
 function [ pimat_gl, value_gl ] = group_lasso(I, R, T, n, groups, lambda)
-
-    not_groups = ~groups;
-    group_n = size(groups,1);
-
-    cvx_begin quiet
-        variable pimat(n,group_n)
-
-        minimize(square_pos(norm(I - sum(R'*pimat,2))) + lambda*sum(sqr_group_sizes'*diag(norms(pimat,2,1))) )
-
-        subject to
-            pimat >= 0
-            pimat(not_groups') == 0
-    cvx_end
-    
-    % Getting results to add to 1
-    pimat=pimat/sum(pimat(:));
-    
-    value_gl = sum(abs(I - R'*pimat));
-    pimat_gl = pimat;
+    pimat_l = sparsegrouplasso(I,R,groups,l,0);
 end
 
 function [ pimat ] = sparsegrouplasso( I, R, groups, l1, l2)
@@ -145,14 +116,11 @@ function [ pimat ] = sparsegrouplasso( I, R, groups, l1, l2)
     not_group_idx = ~group_idx;             % This is the variable for our constraint
     sqr_group_sizes = sqrt(group_sizes);    % To speed up execution
     
-    disp('PREPARING VALUES FOR CVX:');
-    disp(strcat('Group Sparsity: ',int2str(l1),'....Feature Sparsity: ',int2str(l2))); 
-    
-    cvx_begin % quiet % Uncomment 'quiet' for a quiet CVX execution
+    cvx_begin quiet 
         variable pimat_sgl(n,m)
 
         % Zero-Constrained Sparse Group Lasso Model
-        minimize(sum_square_pos(norm(I - sum(R'*pimat_sgl,2),2)) + l1*norms(pimat_sgl,2,1)*sqr_group_sizes + l2*sum(abs(pimat_sgl(:))) )
+        minimize(sum_square_pos(norm(I - sum(R'*pimat_sgl,2))) + l1*norms(pimat_sgl,2,1)*sqr_group_sizes + l2*sum(abs(pimat_sgl(:))) )
 
         subject to
             pimat_sgl >= 0 
