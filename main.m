@@ -46,6 +46,7 @@ switch which
         test_sparsegrouplasso(I, R, groups, iters, l/3000, l);
         disp('Testing Lasso Behaviour');
         test_sparsegrouplasso(I, R, groups, iters, 0, l);
+        
     case 1
         disp('Test 2 - Feature Selection')
         test_feature_selection(I, R, n, T);
